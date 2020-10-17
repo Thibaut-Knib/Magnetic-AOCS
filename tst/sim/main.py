@@ -1,7 +1,7 @@
 # coding=utf-8
 import sys
 import os
-
+#os.chdir(r"C:\Users\thiba\Documents\Polytechnique\P3A\Magnetic-AOCS\tst\sim")
 sys.path.append(os.path.join(*['..'] * 2))
 print(os.getcwd())
 sys.path.append("../../src/")
