@@ -3,6 +3,7 @@
 **Ce repo a été migré sur [github](https://github.com/astronautix/Magnetic-AOCS)**
 
 ## Installation
+python 3.7
 ```bash
 pip3 install -r requirements.txt
 ```
