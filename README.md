@@ -20,3 +20,28 @@ pip3 install -r requirements.txt
     - `bbb` : Algorithmes qui tournent sur la BeagleBone Blue (penser à installer les dépendances dans `tst/lab/bbb/requirements.txt`)
     - `client` : Visualisation et plotting de l'état de la BeagleBone
     - `helmoltz` : Contrôle des bobines de helomotz du LPP
+
+
+## Notes et commentaires
+
+### Arboressance
+
+```
+/ Magnetic-AOCS
+      - Doc
+      - Magnetic-AOCS
+      - Tests
+      - Examples /
+            - Notebooks
+            - scripts /
+                 - Bdot.py
+                     sys.path.append("../../Magnetic-AOCS")
+                  
+```
+
+`export PYTHONPATH=$PATHPYTHON:<chemain vers Magnetic-AOCS/Magnetic-AOCS>`
+
+
+                 
+
+      
