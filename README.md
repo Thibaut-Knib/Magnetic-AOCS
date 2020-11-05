@@ -38,8 +38,34 @@ pip3 install -r requirements.txt
                      sys.path.append("../../Magnetic-AOCS")
                   
 ```
+#### Solution 0
+```python
+import sys
+import os
+#os.chdir(r"C:\Users\thiba\Documents\Polytechnique\P3A\Magnetic-AOCS\tst\sim")
+sys.path.append(os.path.join(*['..'] * 2))
+print(os.getcwd())
+sys.path.append("../../src/")
+sys.path.append("src/")
+```
+
+#### Solution 1
 
 `export PYTHONPATH=$PATHPYTHON:<chemain vers Magnetic-AOCS/Magnetic-AOCS>`
+
+
+#### Solution 2
+
+installer `Magnetic-AOCS/Magnetic-AOCS` avec pip
+
+`pip install -e .`
+`pip install -e ./Magnetic-AOCS`
+
+
+
+
+
+
 
 
                  
