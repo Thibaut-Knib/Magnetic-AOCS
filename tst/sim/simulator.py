@@ -6,7 +6,7 @@ from scao.quaternion import Quaternion
 
 class Simulator:
     """
-    Class simulator : compute the temporal evolution of the satellite
+    Class simulator : compute the temporal evolution of the satellite attitude
 
     """
 

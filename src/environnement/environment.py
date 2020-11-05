@@ -1,9 +1,5 @@
 import sys
 sys.path.append('..')
-from math import *
-import numpy as np
-from random import *
-import wmm2015 as wmm
 from src.environnement.magneticmodel import Model
 
 

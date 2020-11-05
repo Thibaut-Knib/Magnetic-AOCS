@@ -13,7 +13,7 @@ def PIDRW(P, dP, D): ## BUG: CHECK HERE FOR REF CONSISTENCY
         return torque
     return res
 
-def PIDMT(P, dP, D):
+def PIDMT(P, dP, D): # PDMT
     def res(Q,W,Qt,B,I):
         Qr = Q*Qt.inv()
         dynamicalP = P # P/(1+np.linalg.norm(W))**dP
