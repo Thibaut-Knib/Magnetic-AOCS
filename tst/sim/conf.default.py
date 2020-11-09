@@ -42,6 +42,17 @@ tau = 0
 # Environment
 B_model = 'dipole'
 
+
 #Error models
-gyroModel = (np.array([[0],[0],[0]]),np.array([[0],[0],[0]]),np.array([[1],[1],[1]]),np.array([[0],[0],[0]]))
-magneticModel = (np.array([[0],[0],[0]]),np.array([[0],[0],[0]]),np.array([[1],[1],[1]]),np.array([[0],[0],[0]]))
+biais_gyro = np.array([[0],[0],[0]])
+standard_deviation_gyro = np.array([[1e-2],[0],[0]])
+scaling_factor_gyro = np.array([[1],[1],[1]])
+drift_gyro = np.array([[0],[0],[0]])
+
+biais_mag = np.array([[0],[0],[0]])
+standard_deviation_mag = np.array([[0],[0],[0]])
+scaling_factor_mag = np.array([[1],[1],[1]])
+drift_mag = np.array([[0],[0],[0]])
+
+gyroModel = (biais_gyro, standard_deviation_gyro, scaling_factor_gyro, drift_gyro)
+magneticModel = (biais_mag, standard_deviation_mag, scaling_factor_mag, drift_mag)
