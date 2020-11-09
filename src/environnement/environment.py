@@ -10,10 +10,6 @@ class Environment:
 
     """
 
-    mu_0 = 4*pi*1e-7
-    M_ter = 7.7425e22 #A.m^2
-    mu_e  = M_ter*mu_0/4/pi #T.m^(3)
-
     def __init__(self, magnetic_model):
         """
         r : radius, expressed in km

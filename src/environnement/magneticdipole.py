@@ -4,7 +4,9 @@ from math import *
 import numpy as np
 from random import *
 
-mu_e  = 7.7425e9 #T.m^(3)
+mu_0 = 4*pi*1e-7
+M_ter = 7.7425e22 #A.m^2
+mu_e  = M_ter*mu_0/4/pi #T.m^(3)
 delta = 9.35*pi/180
 
 def idm(i, u, r): #inclined dipole model
