@@ -1,6 +1,5 @@
 import numpy as np
 from src.scao.quaternion import Quaternion
-from math import acos, cos, pi, sin
 
 def PIDRW(P, dP, D): ## BUG: CHECK HERE FOR REF CONSISTENCY
     def res(Q,W,Qt,B,I):
@@ -13,7 +12,7 @@ def PIDRW(P, dP, D): ## BUG: CHECK HERE FOR REF CONSISTENCY
         return torque
     return res
 
-def PIDMT(P, dP, D): # PDMT
+def PIDMT(P, dP, D):
     def res(Q,W,Qt,B,I):
         Qr = Q*Qt.inv()
         dynamicalP = P # P/(1+np.linalg.norm(W))**dP
