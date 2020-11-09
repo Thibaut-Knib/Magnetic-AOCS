@@ -19,12 +19,13 @@ from environnement.orbit import Orbit
 from hardware.hardwares import Hardware
 import matplotlib.pyplot as plt
 from scao.quaternion import Quaternion
+from scao.errorModel import MeasuredWorld
 
 ###############################
 # Paramètres de la simulation #
 ###############################
 if (not os.path.isfile('conf.py')):
-    shutil.copy2('tst/sim/conf.default.py', 'conf.py')
+    shutil.copy2('conf.default.py', 'conf.py')
 from conf import *
 
 ###################################
@@ -67,6 +68,9 @@ B = environnement.getEnvironment()  # dans le référentiel du satellite
 # Simulateur
 sim = Simulator(dt, L0)
 
+#Monde mesuré
+mWorld = MeasuredWorld(gyroModel,magneticModel,dt)
+
 # Algortihmes de stabilisation
 stab = SCAO(PIDRW(RW_P, RW_dP, RW_D), PIDMT(MT_P, MT_dP, MT_D), SCAOratio, I, J)  # stabilisateur
 
@@ -87,7 +91,7 @@ axe_z_s = vp.arrow(pos=vp.vector(10, 10, 10), axis=10 * uz, shaftwidth=0.1, colo
 sugarbox = vp.box(pos=vp.vector(10, 10, 10), size=vp.vector(lx, ly, lz), axis=vp.vector(0, 0, 0), up=uy)
 satellite = vp.compound([axe_x_s, axe_y_s, axe_z_s, sugarbox])
 # vecteur champ B
-b_vector = vp.arrow(pos=vp.vector(-5, -5, -5), axis=10 * vp.vector(B[0][0], B[1][0], B[2][0]), shaftwidth=0.1,
+b_vector = vp.arrow(pos=vp.vector(-5, -5, -5), axis=1e5 * vp.vector(B[0][0], B[1][0], B[2][0]), shaftwidth=0.1,
                     color=vp.vector(1, 1, 1))
 
 
@@ -96,7 +100,7 @@ b_vector = vp.arrow(pos=vp.vector(-5, -5, -5), axis=10 * vp.vector(B[0][0], B[1]
 ####################
 def plotAttitude():
     for i in range(4):
-        plt.plot([dt * i / orbite.getPeriod() for i in range(len(qs))], [q.vec()[i, 0] for q in qs])
+        plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.vec()[i, 0] for q in qs])
     plt.xlabel("t (orbits)")
     plt.ylabel("Quaternion component")
     plt.show()
@@ -106,7 +110,7 @@ def plotAttitude():
 # Boucle principale #
 #####################
 output = {'t': [], 'M': [], 'U': []}
-while True:
+while t<dt*5000:
     # on récupère la valeur actuelle du champ magnétique et on actualise l'affichage du champ B
     orbite.setTime(t)  # orbite.setTime(t)
     environnement.setPosition(orbite.getPosition())
@@ -115,10 +119,13 @@ while True:
     # on récupère le prochain vecteur rotation (on fait ube étape dans la sim)
     W = sim.getNextIteration(M, dw, J, B, I)
 
-    # Sauvegarder les valeurs de simulation actuelles:
-    stab.setAttitude(sim.Q)
-    stab.setRotation(W)
-    stab.setMagneticField(B)
+    #Update monde mesuré
+    mWorld.getNextIteration(W,B)
+
+    # Sauvegarder les valeurs de simulation actuelles: (valeurs mesurées)
+    stab.setAttitude(mWorld.QM)
+    stab.setRotation(mWorld.WM)
+    stab.setMagneticField(mWorld.BM)
 
     # Enregistrement de variables pour affichage
     Wr.append(np.linalg.norm(W))
@@ -130,14 +137,16 @@ while True:
 
     # affichage de données toute les 10 itérations
     if nbit % 10 == 0:
-        print(
-        "W :", str(W[:, 0]), "|| norm :", str(np.linalg.norm(W)), "|| dw :", str(dw[:, 0]), "|| B :", str(B[:, 0]),
-        "|| Q :", str(sim.Q.axis()[:, 0]), "|| M :", str(np.linalg.norm(M)))
+        print("t :",t)
+        #print(
+        #"W :", str(W[:, 0]), "|| norm :", str(np.linalg.norm(W)), "|| dw :", str(dw[:, 0]), "|| B :", str(B[:, 0]),
+        #"|| Q :", str(sim.Q.axis()[:, 0]), "|| M :", str(np.linalg.norm(M)))
 
     # Actualisation de l'affichage graphique
-    b_vector.axis = 1e6 * vp.vector(B[0][0], B[1][0], B[2][0])
+    b_vector.axis = 1e5 * vp.vector(B[0][0], B[1][0], B[2][0])
     satellite.rotate(angle=np.linalg.norm(W) * dt, axis=vp.vector(W[0][0], W[1][0], W[2][0]),
                      origin=vp.vector(10, 10, 10))
+
 
     # Rate : réalise 25 fois la boucle par seconde
     vp.rate(fAffichage)  # vp.rate(1/dt)
@@ -146,3 +155,4 @@ while True:
     output['t'].append(t)
     output['M'].append(M)
     output['U'].append(U)
+plotAttitude()

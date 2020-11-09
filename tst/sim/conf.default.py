@@ -1,6 +1,6 @@
 import numpy as np
-from random import *
-from math import *
+from random import random
+from math import pi
 ###############################
 # Paramètres de la simulation #
 ###############################
@@ -40,4 +40,8 @@ mu = 3.986004418e14
 tau = 0
 
 # Environment
-B_model = 'wmm'
+B_model = 'dipole'
+
+#Error models
+gyroModel = (np.array([[0],[0],[0]]),np.array([[0],[0],[0]]),np.array([[1],[1],[1]]),np.array([[0],[0],[0]]))
+magneticModel = (np.array([[0],[0],[0]]),np.array([[0],[0],[0]]),np.array([[1],[1],[1]]),np.array([[0],[0],[0]]))
