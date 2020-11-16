@@ -71,7 +71,7 @@ sim = Simulator(dt, L0, Q0)
 Qt = Quaternion(0.5, 0.5, 0.5, 0.5) # Quaternion objectif
 
 #Monde mesuré
-mWorld = MeasuredWorld(gyroModel,magneticModel,dt)
+mWorld = MeasuredWorld(gyroModel,magneticModel,dt, Q0)
 
 # Algortihmes de stabilisation
 stab = SCAO(PIDRW(RW_P, RW_dP, RW_D), PIDMT(MT_P, MT_dP, MT_D), SCAOratio, I, J)  # stabilisateur
