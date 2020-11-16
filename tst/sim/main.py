@@ -112,7 +112,8 @@ def plotAttitude():
 # Boucle principale #
 #####################
 output = {'t': [], 'M': [], 'U': []}
-while t<dt*1000:
+outputW = {'t': [], 'W': [], 'WM': []}
+while t<dt*2000:
     # on récupère la valeur actuelle du champ magnétique et on actualise l'affichage du champ B
     orbite.setTime(t)  # orbite.setTime(t)
     environnement.setPosition(orbite.getPosition())
@@ -157,4 +158,13 @@ while t<dt*1000:
     output['t'].append(t)
     output['M'].append(M)
     output['U'].append(U)
+
+    outputW['t'].append(t)
+    outputW['W'].append(np.linalg.norm(W))
+    outputW['WM'].append(np.linalg.norm(mWorld.WM))
+
 plotAttitude()
+
+#plt.plot(outputW['t'],outputW['W'],color = 'black')
+#plt.plot(outputW['t'],outputW['WM'],color = 'r')
+#plt.show()
