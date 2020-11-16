@@ -45,7 +45,7 @@ class Quaternion:
             self.d*value.a - self.c*value.b + self.b*value.c + self.a*value.d,
         )
 
-    def tm(self): #transfer matrix from Rr to Rv i.e. X_Rr = M * X_Rv
+    def tm(self):  # transfer matrix from Rr to Rv i.e. X_Rr = M * X_Rv
         if self.tmsave is None:
             q0,q1,q2,q3 = self.a,self.b,self.c,self.d
             self.tmsave = np.array(

@@ -5,8 +5,8 @@ from math import *
 import numpy as np
 # from random import *
 import matplotlib.pyplot as plt
-from src.orbit import Orbit
-from src.environment import Environment
+from orbit import Orbit
+from environment import Environment
 
 #ux = vp.vector(1,0,0)
 #uy = vp.vector(0,1,0)
