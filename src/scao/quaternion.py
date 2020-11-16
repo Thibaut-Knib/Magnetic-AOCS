@@ -90,3 +90,9 @@ class Quaternion:
 
     def R2V(self,vec):
         return np.dot(self.tminv(),vec)
+
+    def __repr__(self):
+        return "(" + str(self.a) + ", " + str(self.b) + ", " + str(self.c) + ", " + str(self.d) + ")"
+
+    def __str__(self):
+        return "(" + str(self.a) + ", " + str(self.b) + ", " + str(self.c) + ", " + str(self.d) + ")"
