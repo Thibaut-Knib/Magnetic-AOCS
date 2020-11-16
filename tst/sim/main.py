@@ -66,7 +66,9 @@ environnement.setPosition(orbite.getPosition())
 B = environnement.getEnvironment()  # dans le référentiel du satellite
 
 # Simulateur
-sim = Simulator(dt, L0)
+Q0 = Quaternion(0.5, 0.5, 0.5, 0.5)
+sim = Simulator(dt, L0, Q0)
+Qt = Quaternion(0.5, 0.5, 0.5, 0.5) # Quaternion objectif
 
 #Monde mesuré
 mWorld = MeasuredWorld(gyroModel,magneticModel,dt)
@@ -110,7 +112,7 @@ def plotAttitude():
 # Boucle principale #
 #####################
 output = {'t': [], 'M': [], 'U': []}
-while t<dt*5000:
+while t<dt*1000:
     # on récupère la valeur actuelle du champ magnétique et on actualise l'affichage du champ B
     orbite.setTime(t)  # orbite.setTime(t)
     environnement.setPosition(orbite.getPosition())
@@ -132,7 +134,7 @@ while t<dt*5000:
     qs.append(sim.Q)
 
     # Prise de la commande de stabilisation
-    dw, M = stab.getCommand(Quaternion(Qt[0][0], Qt[1][0], Qt[2][0], Qt[3][0]))  # dans Rv
+    dw, M = stab.getCommand(Qt)  # dans Rv
     U, M = hardW.getRealCommand(dw, M)
 
     # affichage de données toute les 10 itérations
@@ -147,9 +149,9 @@ while t<dt*5000:
     satellite.rotate(angle=np.linalg.norm(W) * dt, axis=vp.vector(W[0][0], W[1][0], W[2][0]),
                      origin=vp.vector(10, 10, 10))
 
-
+    print(environnement.model.getMagneticField())
     # Rate : réalise 25 fois la boucle par seconde
-    vp.rate(fAffichage)  # vp.rate(1/dt)
+    #vp.rate(fAffichage)  # vp.rate(1/dt)
     nbit += 1
     t += dt
     output['t'].append(t)

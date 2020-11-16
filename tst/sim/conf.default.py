@@ -14,7 +14,7 @@ m = 1 #masse du satellite
 
 # Mouvement
 W0 = 0*np.array([[2*(random()-0.5)] for i in range(3)]) #rotation initiale dans le référentiel R_r
-Qt = np.array([[1],[0],[0],[0]]) #quaternion objectif
+
 
 # SCAO parameters
 SCAOratio = 0
@@ -42,15 +42,17 @@ tau = 0
 # Environment
 B_model = 'dipole'
 
+epsilon_gyro = 0 # 1e-4
+epsilon_mag = 0 # 1e-7
 
 #Error models
 biais_gyro = np.array([[0],[0],[0]])
-standard_deviation_gyro = np.array([[1e-2],[0],[0]])
+standard_deviation_gyro = np.array([[epsilon_gyro],[epsilon_gyro],[epsilon_gyro]])
 scaling_factor_gyro = np.array([[1],[1],[1]])
 drift_gyro = np.array([[0],[0],[0]])
 
 biais_mag = np.array([[0],[0],[0]])
-standard_deviation_mag = np.array([[0],[0],[0]])
+standard_deviation_mag = np.array([[epsilon_mag],[epsilon_mag],[epsilon_mag]])
 scaling_factor_mag = np.array([[1],[1],[1]])
 drift_mag = np.array([[0],[0],[0]])
 
