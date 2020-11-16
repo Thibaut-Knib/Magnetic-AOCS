@@ -5,7 +5,7 @@ from math import *
 # Paramètres de la simulation #
 ###############################
 # Temps
-dt = 0.1 #pas de temps de la simulation
+dt = 5 #pas de temps de la simulation
 fAffichage = 25 #fréquence d'affichage
 
 # Géométrie
@@ -14,6 +14,7 @@ m = 1 # masse du satellite
 
 # Mouvement
 W0 = 0.1*np.array([[2*(random()-0.5)] for i in range(3)]) #rotation initiale dans le référentiel R_r
+W0 = [[0.5], [0], [0]]
 Qt = np.array([[0.5],[0.5],[0.5],[0.5]]) #quaternion objectif
 
 # SCAO parameters

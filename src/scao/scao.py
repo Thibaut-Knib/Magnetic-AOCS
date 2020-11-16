@@ -52,3 +52,38 @@ class SCAO:
         dw = -self.rwRatio*self.stabRW(self.Q,self.W,Qt,self.B,self.I)
 
         return dw, torqueM  #:dans Rv
+
+
+
+class Bdot:
+    """A class for the Bdot Algorithm"""
+
+    def __init__(self, k_Bdot = None, dt = None):
+        """Init the class with the main parameters
+        :param k_Bdot: the proportional parameter of the Bdot Algorithm
+        :param dt: timestep of the simulation
+        """
+
+        self.k_bdot = k_Bdot
+        self.dt = dt
+        self.B_measured_kmoins1 = None  # Meqsured magnetic field at the previous time step.
+        self.dB_v = None  # The temporal derivative of the magnetic field measured in the Vehicle reference frame
+
+    def mag_moment(self, B_measured):
+        """compute the magnetic moment with the Bdot algorithm
+        :param B_measured:  of the magnetic fied measured in the Vehicule Reference frame
+         :type B_measured: np.array of dimention 3
+        :return: M
+          M: Magnetic moment to generate in the Vehicule reference frame
+        """
+        if self.B_measured_kmoins1 is None:
+            self.B_measured_kmoins1 = B_measured
+
+        self.dB_v = B_measured - self.B_measured_kmoins1
+        self.dB_v /= self.dt
+
+        M = - self.k_bdot * self.dB_v
+
+        self.B_measured_kmoins1 = B_measured
+
+        return M
