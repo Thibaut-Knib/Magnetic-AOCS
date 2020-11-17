@@ -4,7 +4,7 @@ from math import *
 import numpy as np
 from random import *
 
-mu_e  = 7.7425e9 #T.m^(3)
+mu_e = 7.7425e9 #T.m^(3)
 delta = 9.35*pi/180
 
 def idm(i, u, r): #inclined dipole model
@@ -13,7 +13,7 @@ def idm(i, u, r): #inclined dipole model
     """
     global delta
     r_ = positionVector(i, u, r)
-    k = np.array([[sin(delta)],[0],[cos(delta)]])
+    k = np.array([[sin(delta)], [0], [cos(delta)]])
     return dipoleField(k, r_, r)
 
 def dipoleField(k, pos, dist):
@@ -21,7 +21,7 @@ def dipoleField(k, pos, dist):
     Raw formula of a magnetic field created by a dipole.
     """
     global mu_e
-    return mu_e/(dist**5)*(dist**2*k-3*np.dot(np.transpose(k),pos)*pos)
+    return mu_e / (dist**5) * (dist**2 * k - 3 * np.dot(np.transpose(k), pos)*pos)
 
 def positionVector(i, u, r):
     """

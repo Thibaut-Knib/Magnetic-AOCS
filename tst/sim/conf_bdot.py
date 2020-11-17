@@ -42,3 +42,4 @@ tau = 0
 
 # Environment
 B_model = 'wmm'
+# B_model = 'dipole'  # Doesn't work !!
