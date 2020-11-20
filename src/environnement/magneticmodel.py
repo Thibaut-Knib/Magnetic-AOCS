@@ -2,8 +2,10 @@ import sys
 sys.path.append('..')
 from math import *
 import numpy as np
-from random import *
+
 sys.path.append('../../wmm2020/src/')
+sys.path.append('../wmm2020/src/')
+sys.path.append('./wmm2020/src/')
 import wmm2020 as wmm
 from src.environnement.magneticdipole import idm
 

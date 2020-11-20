@@ -1,5 +1,7 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
+plt.style.use("presentation")
 
 class LiveVisu2D:
     """Vizualise in real time the evolution of the Satellite attitude and parameters"""
@@ -26,7 +28,7 @@ class LiveVisu2D:
         self.linebz, = self.ax3.plot([], [])
         self.lineb, = self.ax3.plot([], [])
         self.ax3.set_title("Measured Magnetic field in $R_v$")
-        self.ax3.legend(["Norm", "$B_x$", "$B_y$", "$B_z$"])
+        self.ax3.legend(["$B_x$", "$B_y$", "$B_z$", "Norm"])
 
         self.lineAngle, = self.ax4.plot([], [])
         self.ax4.set_title("Angle between W and B [rad]")
