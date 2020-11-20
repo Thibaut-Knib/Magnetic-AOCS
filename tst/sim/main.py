@@ -66,9 +66,9 @@ environnement.setPosition(orbite.getPosition())
 B = environnement.getEnvironment()  # dans le référentiel du satellite
 
 # Simulateur
-Q0 = Quaternion(0.5, 0.5, 0.5, 0.5)
+Q0 = Quaternion(1, 0, 0, 0)
 sim = Simulator(dt, L0, Q0)
-Qt = Quaternion(0.5, 0.5, 0.5, 0.5) # Quaternion objectif
+Qt = Quaternion(1, 0, 0, 0) # Quaternion objectif
 
 #Monde mesuré
 mWorld = MeasuredWorld(gyroModel,magneticModel,dt, Q0)
@@ -113,6 +113,7 @@ def plotAttitude():
 #####################
 output = {'t': [], 'M': [], 'U': []}
 outputW = {'t': [], 'W': [], 'WM': []}
+outputB = {'t': [], 'B': [], 'BM': []}
 while t<dt*2000:
     # on récupère la valeur actuelle du champ magnétique et on actualise l'affichage du champ B
     orbite.setTime(t)  # orbite.setTime(t)
@@ -163,8 +164,16 @@ while t<dt*2000:
     outputW['W'].append(np.linalg.norm(W))
     outputW['WM'].append(np.linalg.norm(mWorld.WM))
 
+    outputB['t'].append(t)
+    outputB['B'].append(np.linalg.norm(B))
+    outputB['BM'].append(np.linalg.norm(mWorld.BM))
+
 plotAttitude()
 
-#plt.plot(outputW['t'],outputW['W'],color = 'black')
-#plt.plot(outputW['t'],outputW['WM'],color = 'r')
+plt.plot(outputW['t'],outputW['W'],color = 'black')
+plt.plot(outputW['t'],outputW['WM'],color = 'r')
+plt.show()
+
+#plt.plot(outputB['t'],outputB['B'],color = 'black')
+#plt.plot(outputB['t'],outputB['BM'],color = 'r')
 #plt.show()
