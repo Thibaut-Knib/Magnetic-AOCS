@@ -43,15 +43,21 @@ class UKF:
             Yi.append(addition(Xi[i],ajout))
         return Yi
 
-    def errorCorrection(self, WM, BM):
+    def errorCorrection(self, WM, BM, B):
         '''
         Renvoie au pas de temps de l'appel la correction de la mesure
         '''
+        # prediction of state
         Xi = self.sigmaPoints() # Caclul des Wi, calcul des Xi et sauvegarde dans self.sigPoints
         Yi = self.evolv(Xi) # process model, le bruit étant intégré dans les sigmaPoints
         xk_ = self.stateMean(Yi)
         WiPrime = WiCalculus(Yi, xk_)
         Pk_ = aPrioriProcessCov(WiPrime)
+        # prediction of measure
+
+
+
+
         return
 
 def addition(x,L):  #x is a state(quaternion + rotation) and L is an array(two 3-dim vectors = 6-dim vector)
