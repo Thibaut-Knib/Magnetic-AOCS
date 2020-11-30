@@ -60,12 +60,13 @@ class UKF:
         ajout[:,0:3] = x[1]*self.dt
         return addition(x,ajout)
 
+    vecEvolv = np.vectorize(evolv)
 
     def errorCorrection(self, w, B):
         '''
         Renvoie au pas de temps de l'appel la correction de la mesure
         '''
         self.sigmaPoints() # Caclul des Wi, calcul des Xi et sauvegarde dans self.sigPoints
-        Yi = self.evolv()
-
+        Yi = self.vecEvolv(self.sigPoints) # process model, le bruit étant intégré dans les sigmaPoints
+        xk_ = self.stateMean(Yi)
         return
