@@ -96,3 +96,23 @@ class Quaternion:
 
     def __str__(self):
         return "(" + str(self.a) + ", " + str(self.b) + ", " + str(self.c) + ", " + str(self.d) + ")"
+
+    def mean(LQ,tol):
+        qt = Quaternion(1,0,0,0)
+
+        alpha = 2*tol  #Initialisation pour entrer dans la boucle
+        while alpha > tol
+            e = 0
+            qtinf = qt.inv()
+            for i in range(len(LQ)):
+                eiQuat = LQ[i]*qtinf
+                alpha_i = eiQuat.angle()
+                axis_i = eiQuat.axis()
+                e += alpha_i*axis_i
+            e /= (len(LQ))
+
+            alpha = np.linalg.norm(e)
+            eQuat = Quaternion(np.cos(alpha/2),e[0,0]*np.sin(alpha/2),e[1,0]*np.sin(alpha/2),e[2,0]*np.sin(alpha/2))
+            qt = e*qt
+
+        return qt
