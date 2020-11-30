@@ -25,8 +25,8 @@ class UKF:
     def stateMean(self,Yi):
 
         mean = []
-        print(Yi[:][0])
-        mean.append(Quaternion.mean(Yi[:][0],1e-4))
+        LQuat = [x[0] for x in Yi]
+        mean.append(Quaternion.mean(LQuat,1e-4))
         rotMean = np.zeros((3,1))
         for i in range(2*self.dim):
             rotMean += Yi[i][1]
@@ -59,9 +59,6 @@ class UKF:
         Renvoie au pas de temps de l'appel la correction de la mesure
         '''
         Xi = self.sigmaPoints() # Caclul des Wi, calcul des Xi et sauvegarde dans self.sigPoints
-        #print("\n")
-        #print(Xi)
-        #print("\n")
         Yi = self.evolv(Xi) # process model, le bruit étant intégré dans les sigmaPoints
         xk_ = self.stateMean(Yi)
         WiPrime = WiCalculus(Yi, xk_)

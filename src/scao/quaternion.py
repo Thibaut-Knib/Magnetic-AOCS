@@ -113,6 +113,6 @@ class Quaternion:
 
             alpha = np.linalg.norm(e)
             eQuat = Quaternion(np.cos(alpha/2),e[0,0]*np.sin(alpha/2),e[1,0]*np.sin(alpha/2),e[2,0]*np.sin(alpha/2))
-            qt = e*qt
+            qt = eQuat*qt
 
         return qt
