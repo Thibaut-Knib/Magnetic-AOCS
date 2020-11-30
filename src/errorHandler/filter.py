@@ -4,11 +4,11 @@ from scao.quaternion import Quaternion
 
 class UKF:
 
-    def __init__(self,dim,q0,W0,P0,Q,dt):
+    def __init__(self,dim,q0,W0,P0,Qcov,dt):
         self.dim = dim  #Dimension of state
         self.x = [q0,W0]  #Current state
         self.P = P0  #Covariance matrix on the state
-        self.Q = Q  #Process noise
+        self.Qcov = Qcov  #Process noise
         self.sigPoints = None  #List of sigma points
         self.dt = dt  #time step
 
@@ -19,7 +19,7 @@ class UKF:
         return [x[0]*Quaternion(np.cos(alpha/2),direction[0,0]*np.sin(alpha/2),direction[0,1]*np.sin(alpha/2),direction[0,2]*np.sin(alpha/2)),x[1] + L[:,3:6]]
 
     def sigmaPoints(self):
-        sqrtmatrix = np.linalg.sqrtm(self.P + self.Q)
+        sqrtmatrix = np.linalg.sqrtm(self.P + self.Qcov)
 
         self.sigPoints = []
         for i in range(self.dim):
@@ -37,7 +37,7 @@ class UKF:
         return qt
 
 
-    def evolv(self):
+    def evolv(self,x):  #x a state vector
         ajout = np.zeros((6,1))
-        ajout[:,0:3] = self.x[1]*self.dt
-        return addition(self.x,ajout)
+        ajout[:,0:3] = x[1]*self.dt
+        return addition(x,ajout)
