@@ -55,7 +55,12 @@ class UKF:
         WiPrime = WiCalculus(Yi, xk_)
         Pk_ = aPrioriProcessCov(WiPrime)
         # prediction of measure
-
+        Zi = predictObs(Yi,B)
+        zk_ = obsMean(Zi)
+        nu = innovation(zk_, WM, BM)
+        Pzz = ObsCov(Zi, zk_)
+        Pnunu = self.Rcov + Pzz
+        Pxz = crossCorrelationMatrix(WiPrime, Zi)
 
 
 
