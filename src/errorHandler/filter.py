@@ -123,3 +123,10 @@ def innovation(xk_,WM,BM):
     Zmesur[0:3] = WM
     Zmesur[3:6] = BM
     return Zmesur - xk_
+
+def ObsCov(Zi,zk_):
+    cov = 0
+    for z in Zi:
+        cov += np.dot(Zi-zk_,(Zi-zk_).T)
+    cov /= len(Zi)
+    return cov
