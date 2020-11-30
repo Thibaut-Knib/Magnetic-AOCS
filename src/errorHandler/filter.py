@@ -41,3 +41,11 @@ class UKF:
         ajout = np.zeros((6,1))
         ajout[:,0:3] = x[1]*self.dt
         return addition(x,ajout)
+
+
+    def errorCorrection(w, B):
+        '''
+        Renvoie au pas de temps de l'appel la correction de la mesure
+        '''
+
+        return
