@@ -16,7 +16,7 @@ class UKF:
         alpha = np.linalg.norm(L[:,0:3])
         direction = L[:,0:3]/alpha
 
-        return [x[0]*Quaternion(np.cos(alpha/2),direction[0,0]*np.sin(alpha/2),direction[0,1]*np.sin(alpha/2),direction[0,2]*np.sin(alpha/2)),x[1] + L[:,3:6]]
+        return [x[0]*Quaternion(np.cos(alpha/2),direction[0,0]*np.sin(alpha/2),direction[1,0]*np.sin(alpha/2),direction[2,0]*np.sin(alpha/2)),x[1] + L[:,3:6]]
 
     def sigmaPoints(self):
         sqrtmatrix = np.linalg.sqrtm(self.P + self.Qcov)
@@ -26,15 +26,19 @@ class UKF:
         for i in range(self.dim):
             self.sigPoints[i+self.dim] = addition(self.x, -sqrt(2*self.dim) * sqrtmatrix[:,i])
 
-    def prediction(self):
-        self.sigmaPoints()
+    def stateMean(self,Yi):
 
-        x = []
-        x.append(self.quaternMean(1e-4))
+        mean = []
+        mean.append(self.quaternMean(Yi,1e-4))
+        rotMean = np.zeros((3,1))
+        for i in range(2*self.dim):
+            rotMean += Yi[i][1]
+        rotMean /= (2*self.dim)
+        mean.append(rotMean)
 
-        return
+        return mean
 
-    def quaternMean(self,tol):
+    def quaternMean(self,Yi,tol):
         qt = Quaternion(1,0,0,0)
 
         alpha = 2*tol  #Initialisation pour entrer dans la boucle
@@ -42,14 +46,14 @@ class UKF:
             e = 0
             qtinf = qt.inv()
             for i in range(2*self.dim):
-                eiQuat = self.sigPoints[i][0]*qtinf
+                eiQuat = Yi[i][0]*qtinf
                 alpha_i = eiQuat.angle()
                 axis_i = eiQuat.axis()
                 e += alpha_i*axis_i
             e /= (2*self.dim)
 
             alpha = np.linalg.norm(e)
-            eQuat = Quaternion(np.cos(alpha/2),e[0,0]*np.sin(alpha/2),e[0,1]*np.sin(alpha/2),e[0,2]*np.sin(alpha/2))
+            eQuat = Quaternion(np.cos(alpha/2),e[0,0]*np.sin(alpha/2),e[1,0]*np.sin(alpha/2),e[2,0]*np.sin(alpha/2))
             qt = e*qt
 
         return qt
