@@ -4,12 +4,13 @@ from scao.quaternion import Quaternion
 
 class UKF:
 
-    def __init__(self,dim,q0,W0,P0,Qcov,dt):
+    def __init__(self,dim,q0,W0,P0,Qcov,Rcov,dt):
         self.dim = dim  #Dimension of state
         self.x = [q0,W0]  #Current state
         self.P = P0  #Covariance matrix on the state
         self.Qcov = Qcov  #Process noise
         self.dt = dt  #time step
+        self.Rcov = Rcov #covariance du modèle d'erreur de la mesure de
 
 
     def sigmaPoints(self):
@@ -43,15 +44,21 @@ class UKF:
             Yi.append(addition(Xi[i],ajout))
         return Yi
 
-    def errorCorrection(self, WM, BM):
+    def errorCorrection(self, WM, BM, B):
         '''
         Renvoie au pas de temps de l'appel la correction de la mesure
         '''
+        # prediction of state
         Xi = self.sigmaPoints() # Caclul des Wi, calcul des Xi et sauvegarde dans self.sigPoints
         Yi = self.evolv(Xi) # process model, le bruit étant intégré dans les sigmaPoints
         xk_ = self.stateMean(Yi)
         WiPrime = WiCalculus(Yi, xk_)
         Pk_ = aPrioriProcessCov(WiPrime)
+        # prediction of measure
+
+
+
+
         return
 
 def addition(x,L):  #x is a state(quaternion + rotation) and L is an array(two 3-dim vectors = 6-dim vector)
