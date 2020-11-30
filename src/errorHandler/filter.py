@@ -81,3 +81,30 @@ def aPrioriProcessCov(WiPrime):
         Pk_ += np.dot(WiPrime[i],WiPrime[i].T)
     Pk_ /= (2*6)
     return Pk_
+
+def predictRotation(Yi):
+    return [x[1] for x in Yi]
+
+def predictMagnetField(Yi,B):
+    Zi = []
+    for i in range(len(Yi)):
+        q = Yi[i][0]
+        Zi.append(q.R2V(B))
+    return Zi
+
+def predictObs(Yi,B):
+    Zi = []
+    Zi1 = predictRotation(Yi)
+    Zi2 = predictMagnetField(Yi,B)
+    for i in range(len(Yi)):
+        Z = np.zeros((6,1))
+        Z[0:3] = Zi1[i]
+        Z[3:6] = Zi2[i]
+        Zi.append(Z)
+    return Zi
+
+def innovation(Zi,WM,BM):
+    nui = []
+    Zmesur = np.zeros((7,1))
+    Zmesur[0:3] = WM
+    for i in range(len(Zi)):
