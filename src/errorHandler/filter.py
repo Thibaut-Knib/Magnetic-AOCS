@@ -38,12 +38,13 @@ class UKF:
 
         return mean
 
-    def evolv(self,x):  #x a state vector
-        ajout = np.zeros((6,1))
-        ajout[:,0:3] = x[1]*self.dt
-        return addition(x,ajout)
-
-    vecEvolv = np.vectorize(evolv)
+    def evolv(self,Xi):  #list of state vectors
+        Yi = []
+        for i in range(len(Xi)):
+            ajout = np.zeros((6,1))
+            ajout[:,0:3] = Xi[i][1]*self.dt
+            Yi.append(addition(x,ajout))
+        return Yi
 
     def errorCorrection(self, w, B):
         '''
