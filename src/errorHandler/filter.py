@@ -51,7 +51,7 @@ class UKF:
         Renvoie au pas de temps de l'appel la correction de la mesure
         '''
         Xi = self.sigmaPoints() # Caclul des Wi, calcul des Xi et sauvegarde dans self.sigPoints
-        Yi = self.vecEvolv(Xi) # process model, le bruit étant intégré dans les sigmaPoints
+        Yi = self.evolv(Xi) # process model, le bruit étant intégré dans les sigmaPoints
         xk_ = self.stateMean(Yi)
         WiPrime = WiCalculus(Yi, xk_)
         Pk_ = aPrioriProcessCov(WiPrime)
