@@ -30,10 +30,29 @@ class UKF:
     def prediction(self):
         self.sigmaPoints()
 
+        x = []
+        x.append(self.quaternMean(1e-4))
+
         return
 
     def quaternMean(self,tol):
         qt = Quaternion(1,0,0,0)
+
+        alpha = 2*tol  #Initialisation pour entrer dans la boucle
+        while alpha > tol
+            e = 0
+            qtinf = qt.inv()
+            for i in range(2*self.dim):
+                eiQuat = self.sigPoints[i][0]*qtinf
+                alpha_i = eiQuat.angle()
+                axis_i = eiQuat.axis()
+                e += alpha_i*axis_i
+            e /= (2*self.dim)
+
+            alpha = np.linalg.norm(e)
+            eQuat = Quaternion(np.cos(alpha/2),e[0,0]*np.sin(alpha/2),e[0,1]*np.sin(alpha/2),e[0,2]*np.sin(alpha/2))
+            qt = e*qt
+
         return qt
 
 
