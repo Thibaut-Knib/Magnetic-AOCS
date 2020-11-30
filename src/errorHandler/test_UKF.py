@@ -24,4 +24,4 @@ WM = np.array([[1.], [0], [0]])
 BM = np.array([[0], [0.9], [0]])
 B = np.array([[0], [1], [0.]])
 
-ukf.errorCorrection(WM, BM, B)
+Qcorr, Wcorr = ukf.errorCorrection(WM, BM, B)
