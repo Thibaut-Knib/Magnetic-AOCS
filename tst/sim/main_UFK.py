@@ -140,13 +140,13 @@ while t<dt*2000:
 
     #Update monde mesuré
     mWorld.getNextIteration(W,B)
-
+    print("b4 UKF")
     # Correction des erreurs avec un filtre
-    Qcorr, Wcorr = ukf.serrorCorrection(mWorld.WM, mWorld.BM, B)
-
+    ukf.errorCorrection(mWorld.WM, mWorld.BM, B)
+    print("after UKF")
     # Sauvegarder les valeurs de simulation actuelles: (valeurs mesurées)
-    stab.setAttitude(Qcorr)
-    stab.setRotation(Wcorr.WM)
+    stab.setAttitude(ukf.x[0])
+    stab.setRotation(mWorld.WM)
     stab.setMagneticField(mWorld.BM) #non recalé
 
     # Enregistrement de variables pour affichage

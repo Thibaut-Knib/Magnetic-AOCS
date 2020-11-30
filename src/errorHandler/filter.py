@@ -62,9 +62,11 @@ class UKF:
         Pnunu = self.Rcov + Pzz
         Pxz = crossCorrelationMatrix(WiPrime, Zi, zk_)
         K = kalmanGain(Pxz, Pnunu)
-        xCorr = addition(xk_,Kk*nu)
-
-
+        xCorr = addition(xk_,np.dot(K,nu))
+        PCorr = Pk_ - np.dot(K, np.dot(Pnunu, K.T))
+        # Update
+        self.x = xCorr
+        self.P = PCorr
         return
 
 def addition(x,L):  #x is a state(quaternion + rotation) and L is an array(two 3-dim vectors = 6-dim vector)
@@ -137,7 +139,7 @@ def kalmanGain(Pxz, Pnunu):
     return np.dot(Pxz, np.linalg.inv(Pnunu))
 
 def crossCorrelationMatrix(WiPrime, Zi, zk_):
-    crosscov = np.zeros((len(WiPrime),len(Zi)))
+    crosscov = np.zeros((len(WiPrime[0]),len(Zi[0])))
     for w,z in zip(WiPrime,Zi):
         crosscov += np.dot(w,(z-zk_).T)
     crosscov /= len(Zi)

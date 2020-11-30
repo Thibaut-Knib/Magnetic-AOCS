@@ -99,9 +99,11 @@ class Quaternion:
 
     def mean(LQ,tol):
         qt = Quaternion(1,0,0,0)
-
+        nMax= 30
+        acc=0
         alpha = 2*tol  #Initialisation pour entrer dans la boucle
-        while alpha > tol:
+        while alpha > tol and acc < nMax:
+            acc+=1
             e = 0
             qtinf = qt.inv()
             for i in range(len(LQ)):
