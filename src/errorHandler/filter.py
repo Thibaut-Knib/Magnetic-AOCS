@@ -4,12 +4,13 @@ from scao.quaternion import Quaternion
 
 class UKF:
 
-    def __init__(self,dim,q0,W0,P0,Qcov,dt):
+    def __init__(self,dim,q0,W0,P0,Qcov,Rcov,dt):
         self.dim = dim  #Dimension of state
         self.x = [q0,W0]  #Current state
         self.P = P0  #Covariance matrix on the state
         self.Qcov = Qcov  #Process noise
         self.dt = dt  #time step
+        self.Rcov = Rcov #covariance du modèle d'erreur de la mesure de
 
 
     def sigmaPoints(self):
