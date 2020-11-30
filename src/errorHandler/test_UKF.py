@@ -12,4 +12,15 @@ P0 = np.eye(dim)
 Qcov = np.eye(dim)
 dt = 1
 
-ufk = flt.UKF(dim,q0,W0,P0,Qcov,dt)
+ukf = flt.UKF(dim,q0,W0,P0,Qcov,dt)
+
+
+################################
+#  Pour un passage de boucle
+################################
+
+# Entree
+WM = np.array([[1], [0], [0]])
+BM = np.array([[0], [1], [0]])
+
+ukf.errorCorrection(WM, BM)
