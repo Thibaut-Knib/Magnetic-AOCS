@@ -110,8 +110,11 @@ def predictObs(Yi,B):
         Zi.append(Z)
     return Zi
 
-def innovation(Zi,WM,BM):
-    nui = []
+def obsMean(Zi):
+    return sum(Zi)/len(Zi)
+
+def innovation(xk_,WM,BM):
     Zmesur = np.zeros((7,1))
     Zmesur[0:3] = WM
-    for i in range(len(Zi)):
+    Zmesur[3:6] = BM
+    return Zmesur - xk_
