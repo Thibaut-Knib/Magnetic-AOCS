@@ -19,7 +19,7 @@ from environnement.orbit import Orbit
 from hardware.hardwares import Hardware
 import matplotlib.pyplot as plt
 from scao.quaternion import Quaternion
-from scao.errorModel import MeasuredWorld
+from errorHandler.errorModel import MeasuredWorld
 
 ###############################
 # Paramètres de la simulation #
