@@ -101,7 +101,7 @@ class Quaternion:
         qt = Quaternion(1,0,0,0)
 
         alpha = 2*tol  #Initialisation pour entrer dans la boucle
-        while alpha > tol
+        while alpha > tol:
             e = 0
             qtinf = qt.inv()
             for i in range(len(LQ)):
