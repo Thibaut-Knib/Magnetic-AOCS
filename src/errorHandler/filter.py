@@ -29,7 +29,7 @@ class UKF:
     def stateMean(self,Yi):
 
         mean = []
-        mean.append(self.quaternMean(Yi,1e-4))
+        mean.append(Quaternion.mean(Yi[:][0],1e-4))
         rotMean = np.zeros((3,1))
         for i in range(2*self.dim):
             rotMean += Yi[i][1]
@@ -37,27 +37,6 @@ class UKF:
         mean.append(rotMean)
 
         return mean
-
-    def quaternMean(self,Yi,tol):
-        qt = Quaternion(1,0,0,0)
-
-        alpha = 2*tol  #Initialisation pour entrer dans la boucle
-        while alpha > tol
-            e = 0
-            qtinf = qt.inv()
-            for i in range(2*self.dim):
-                eiQuat = Yi[i][0]*qtinf
-                alpha_i = eiQuat.angle()
-                axis_i = eiQuat.axis()
-                e += alpha_i*axis_i
-            e /= (2*self.dim)
-
-            alpha = np.linalg.norm(e)
-            eQuat = Quaternion(np.cos(alpha/2),e[0,0]*np.sin(alpha/2),e[1,0]*np.sin(alpha/2),e[2,0]*np.sin(alpha/2))
-            qt = e*qt
-
-        return qt
-
 
     def evolv(self,x):  #x a state vector
         ajout = np.zeros((6,1))
