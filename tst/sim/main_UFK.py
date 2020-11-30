@@ -86,8 +86,10 @@ dim = 6 # 3 pour les quaternions, 3 pour la rotation
 Winit = np.array([[1.0],[0.0],[0.0]])
 P0 = np.eye(dim)
 Qcov = np.eye(dim)
+Rcov = np.eye(6) # ATTENTION, dimension de la mesure ici, pas de l'état
 
-ukf = flt.UKF(dim,Q0,Winit,P0,Qcov)
+
+ukf = flt.UKF(dim,Q0,Winit,P0,Qcov,Rcov,dt)
 
 ############################
 # Initialisation graphique #
