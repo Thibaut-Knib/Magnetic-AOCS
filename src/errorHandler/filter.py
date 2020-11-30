@@ -9,7 +9,6 @@ class UKF:
         self.x = [q0,W0]  #Current state
         self.P = P0  #Covariance matrix on the state
         self.Qcov = Qcov  #Process noise
-        self.sigPoints = np.zeros(2*dim)  #List of sigma points (Xi)
         self.dt = dt  #time step
 
     def addition(x,L):  #x is a state(quaternion + rotation) and L is an array(two 3-dim vectors = 6-dim vector)
@@ -20,11 +19,12 @@ class UKF:
 
     def sigmaPoints(self):
         sqrtmatrix = np.linalg.sqrtm(self.P + self.Qcov)
-
+        res = []
         for i in range(self.dim):
-            self.sigPoints[i] = addition(self.x, sqrt(2*self.dim) * sqrtmatrix[:,i])
+            res.append( addition(self.x, sqrt(2*self.dim) * sqrtmatrix[:,i]) )
         for i in range(self.dim):
-            self.sigPoints[i+self.dim] = addition(self.x, -sqrt(2*self.dim) * sqrtmatrix[:,i])
+            res.append( addition(self.x, -sqrt(2*self.dim) * sqrtmatrix[:,i]) )
+        return res
 
     def stateMean(self,Yi):
 
@@ -49,8 +49,8 @@ class UKF:
         '''
         Renvoie au pas de temps de l'appel la correction de la mesure
         '''
-        self.sigmaPoints() # Caclul des Wi, calcul des Xi et sauvegarde dans self.sigPoints
-        Yi = self.vecEvolv(self.sigPoints) # process model, le bruit étant intégré dans les sigmaPoints
+        Xi = self.sigmaPoints() # Caclul des Wi, calcul des Xi et sauvegarde dans self.sigPoints
+        Yi = self.vecEvolv(Xi) # process model, le bruit étant intégré dans les sigmaPoints
         xk_ = self.stateMean(Yi)
         WiPrime = WiCalculus(Yi, xk_)
         Pk_ = aPrioriProcessCov(WiPrime)
