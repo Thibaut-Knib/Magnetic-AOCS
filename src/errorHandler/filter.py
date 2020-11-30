@@ -80,3 +80,10 @@ def WiCalculus(Yi, xk_):
         elmt[3:6] = Yi[i][1] - xk_[1]
         WiPrime.append(elmt)
     return WiPrime
+
+def aPrioriProcessCov(WiPrime):
+    Pk_ = np.zeros((6,6))
+    for i in range(len(WiPrime)):
+        Pk_ += np.dot(WiPrime[i],WiPrime[i].T)
+    Pk_ /= (2*6)
+    return Pk_
