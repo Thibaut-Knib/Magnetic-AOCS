@@ -11,6 +11,11 @@ class UKF:
         self.Qcov = Qcov  #Process noise
         self.dt = dt  #time step
 
+    def addition(x,L):  #x is a state(quaternion + rotation) and L is an array(two 3-dim vectors = 6-dim vector)
+        alpha = np.linalg.norm(L[0:3])
+        direction = L[0:3]/alpha
+
+        return [x[0]*Quaternion(np.cos(alpha/2),direction[0,0]*np.sin(alpha/2),direction[1,0]*np.sin(alpha/2),direction[2,0]*np.sin(alpha/2)),x[1] + L[:,3:6]]
 
     def sigmaPoints(self):
         sqrtmatrix = np.linalg.cholesky(self.P + self.Qcov)
@@ -37,11 +42,22 @@ class UKF:
         Yi = []
         for i in range(len(Xi)):
             ajout = np.zeros((6,1))
-            ajout[:,0:3] = Xi[i][1]*self.dt
+            ajout[0:3] = Xi[i][1]*self.dt
             Yi.append(addition(x,ajout))
         return Yi
 
-    def errorCorrection(self, WM, BM):
+    def WiCalculus(Yi, xk_):
+        WiPrime = []
+        for i in range(len(Yi)):
+            q = Yi[i][0]*xk_[0].inv()
+            vec = q.axis()*q.angle()
+            elmt = np.zeros((6,1))
+            elmt[0:3] = vec
+            elmt[3:6] = Yi[i][1] - xk_[1]
+            WiPrime.append(elmt)
+        return WiPrime
+
+    def errorCorrection(self, w, B):
         '''
         Renvoie au pas de temps de l'appel la correction de la mesure
         '''
