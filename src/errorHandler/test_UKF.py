@@ -20,7 +20,8 @@ ukf = flt.UKF(dim,q0,W0,P0,Qcov,dt)
 ################################
 
 # Entree
-WM = np.array([[1], [0], [0]])
-BM = np.array([[0], [1], [0]])
+WM = np.array([[1.], [0], [0]])
+BM = np.array([[0], [0.9], [0]])
+B = np.array([[0], [1], [0.]])
 
-ukf.errorCorrection(WM, BM)
+ukf.errorCorrection(WM, BM, B)
