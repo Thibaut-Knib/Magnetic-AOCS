@@ -132,7 +132,7 @@ def ObsCov(Zi,zk_):
     return cov
 
 def crossCorrelationMatrix(WiPrime, Zi, zk_):
-    crosscov = np.zeros((len(Zi),len(Zi)))
+    crosscov = np.zeros((len(WiPrime),len(Zi)))
     for w,z in zip(WiPrime,Zi):
         crosscov += np.dot(w,(z-zk_).T)
     crosscov /= len(Zi)
