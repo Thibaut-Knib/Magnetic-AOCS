@@ -119,14 +119,14 @@ def predictObs(Yi,B):
 def obsMean(Zi):
     return sum(Zi)/len(Zi)
 
-def innovation(xk_,WM,BM):
-    Zmesur = np.zeros((7,1))
+def innovation(zk_,WM,BM):
+    Zmesur = np.zeros((6,1))
     Zmesur[0:3] = WM
     Zmesur[3:6] = BM
-    return Zmesur - xk_
+    return Zmesur - zk_
 
 def ObsCov(Zi,zk_):
-    cov = np.zeros((len(Zi),len(Zi)))
+    cov = np.zeros((len(Zi[0]),len(Zi[0])))
     for z in Zi:
         cov += np.dot(z-zk_,(z-zk_).T)
     cov /= len(Zi)
