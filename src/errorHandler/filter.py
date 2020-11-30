@@ -60,8 +60,9 @@ class UKF:
         nu = innovation(zk_, WM, BM)
         Pzz = ObsCov(Zi, zk_)
         Pnunu = self.Rcov + Pzz
-        Pxz = crossCorrelationMatrix(WiPrime, Zi)
-
+        Pxz = crossCorrelationMatrix(WiPrime, Zi, zk_)
+        K = kalmanGain(Pxz, Pnunu)
+        xCorr = addition(xk_,Kk*nu)
 
 
         return
@@ -130,6 +131,10 @@ def ObsCov(Zi,zk_):
         cov += np.dot(z-zk_,(z-zk_).T)
     cov /= len(Zi)
     return cov
+
+
+def kalmanGain(Pxz, Pnunu):
+    return np.dot(Pxz, np.linalg.inv(Pnunu))
 
 def crossCorrelationMatrix(WiPrime, Zi, zk_):
     crosscov = np.zeros((len(WiPrime),len(Zi)))
