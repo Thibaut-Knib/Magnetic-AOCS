@@ -125,8 +125,15 @@ def innovation(xk_,WM,BM):
     return Zmesur - xk_
 
 def ObsCov(Zi,zk_):
-    cov = 0
+    cov = np.zeros((len(Zi),len(Zi)))
     for z in Zi:
-        cov += np.dot(Zi-zk_,(Zi-zk_).T)
+        cov += np.dot(z-zk_,(z-zk_).T)
     cov /= len(Zi)
     return cov
+
+def crossCorrelationMatrix(WiPrime, Zi, zk_):
+    crosscov = np.zeros((len(Zi),len(Zi)))
+    for w,z in zip(WiPrime,Zi):
+        crosscov += np.dot(w,(z-zk_).T)
+    crosscov /= len(Zi)
+    return crosscov
