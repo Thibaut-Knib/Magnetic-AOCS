@@ -26,7 +26,7 @@ class UKF:
 
         mean = []
         LQuat = [x[0] for x in Yi]
-        mean.append(Quaternion.mean(LQuat,1e-4))
+        mean.append(Quaternion.mean(LQuat,1e-2))
         rotMean = np.zeros((3,1))
         for i in range(2*self.dim):
             rotMean += Yi[i][1]
