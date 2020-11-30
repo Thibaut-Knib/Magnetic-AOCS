@@ -55,7 +55,10 @@ class UKF:
         WiPrime = WiCalculus(Yi, xk_)
         Pk_ = aPrioriProcessCov(WiPrime)
         # prediction of measure
-
+        Zi = predictObs(Yi,B)
+        zk_ = obsMean(Zi)
+        nu = innovation(zk_, WM, BM)
+        Pnunu = self.Rcov
 
 
 
@@ -115,3 +118,4 @@ def innovation(Zi,WM,BM):
     Zmesur = np.zeros((7,1))
     Zmesur[0:3] = WM
     for i in range(len(Zi)):
+        pass
