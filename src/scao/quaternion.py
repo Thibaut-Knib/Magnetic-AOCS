@@ -97,24 +97,27 @@ class Quaternion:
     def __str__(self):
         return "(" + str(self.a) + ", " + str(self.b) + ", " + str(self.c) + ", " + str(self.d) + ")"
 
-    def mean(LQ,tol):
-        qt = Quaternion(1,0,0,0)
-        nMax= 30
-        acc=0
-        alpha = 2*tol  #Initialisation pour entrer dans la boucle
-        while alpha > tol and acc < nMax:
-            acc+=1
+    def mean(quatInit, LQuat, tol, nMax):
+        qt = quatInit
+        alpha = tol + 1  #Initialisation pour entrer dans la boucle
+
+        compteur = 0  #Compteur tours de boucle
+        while alpha > tol and compteur < nMax:
             e = 0
             qtinf = qt.inv()
-            for i in range(len(LQ)):
-                eiQuat = LQ[i]*qtinf
+            for qi in LQuat:
+                eiQuat = qi*qtinf
                 alpha_i = eiQuat.angle()
                 axis_i = eiQuat.axis()
                 e += alpha_i*axis_i
-            e /= (len(LQ))
+            e /= (len(LQuat))
 
             alpha = np.linalg.norm(e)
             eQuat = Quaternion(np.cos(alpha/2),e[0,0]*np.sin(alpha/2),e[1,0]*np.sin(alpha/2),e[2,0]*np.sin(alpha/2))
             qt = eQuat*qt
+
+            compteur += 1
+        if (compteur == nMax):
+            print(alpha/3.14*180)
 
         return qt

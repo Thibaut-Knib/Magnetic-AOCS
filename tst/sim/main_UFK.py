@@ -81,15 +81,21 @@ stab = SCAO(PIDRW(RW_P, RW_dP, RW_D), PIDMT(MT_P, MT_dP, MT_D), SCAOratio, I, J)
 # Initialisation du filtre #
 ############################
 
-dim = 6 # 3 pour les quaternions, 3 pour la rotation
+dimState = 6 # 3 pour les quaternions, 3 pour la rotation
+dimObs = 6
 
-Winit = np.array([[1.0],[0.0],[0.0]])
-P0 = np.eye(dim)
-Qcov = np.eye(dim)
-Rcov = np.eye(6) # ATTENTION, dimension de la mesure ici, pas de l'état
+P0 = np.eye(dimState)*1e-4
+Qcov = np.zeros((dimState,dimState))
+Qcov[3,3],Qcov[4,4],Qcov[5,5] = 1.,1.,1.  #Grosse incertitude sur la vitesse de rotation afin de permettre la mise à jour
+Rcov = np.zeros((dimObs,dimObs)) # ATTENTION, dimension de la mesure ici, pas de l'état
+Rcov[0,0] = gyroModel[0][0,0] + gyroModel[1][0,0]
+Rcov[1,1] = gyroModel[0][1,0] + gyroModel[1][1,0]
+Rcov[2,2] = gyroModel[0][2,0] + gyroModel[1][2,0]
+Rcov[3,3] = magneticModel[0][0,0] + magneticModel[1][0,0]
+Rcov[4,4] = magneticModel[0][1,0] + magneticModel[1][1,0]
+Rcov[5,5] = magneticModel[0][2,0] + magneticModel[1][2,0]
 
-
-ukf = flt.UKF(dim,Q0,Winit,P0,Qcov,Rcov,dt)
+ukf = flt.UKF(dimState,Q0,W0,P0,Qcov,Rcov,dt)
 
 ############################
 # Initialisation graphique #
@@ -140,10 +146,8 @@ while t<dt*2000:
 
     #Update monde mesuré
     mWorld.getNextIteration(W,B)
-    print("b4 UKF")
     # Correction des erreurs avec un filtre
     ukf.errorCorrection(mWorld.WM, mWorld.BM, B)
-    print("after UKF")
     # Sauvegarder les valeurs de simulation actuelles: (valeurs mesurées)
     stab.setAttitude(ukf.x[0])
     stab.setRotation(mWorld.WM)
@@ -169,7 +173,7 @@ while t<dt*2000:
     satellite.rotate(angle=np.linalg.norm(W) * dt, axis=vp.vector(W[0][0], W[1][0], W[2][0]),
                      origin=vp.vector(10, 10, 10))
 
-    print(environnement.model.getMagneticField())
+    #print(environnement.model.getMagneticField())
     # Rate : réalise 25 fois la boucle par seconde
     #vp.rate(fAffichage)  # vp.rate(1/dt)
     nbit += 1
