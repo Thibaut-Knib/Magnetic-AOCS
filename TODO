@@ -1,2 +1,6 @@
 Créer une classe state
 gestion de la dimension (cf. 6 et 3)
+
+add
+sns.set(context = 'talk', style = 'white')
+plt.rcParams["figure.figsize"] = (8,4)
