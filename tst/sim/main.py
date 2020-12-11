@@ -20,6 +20,7 @@ from hardware.hardwares import Hardware
 import matplotlib.pyplot as plt
 from scao.quaternion import Quaternion
 from errorHandler.errorModel import MeasuredWorld
+import seaborn as sns
 
 ###############################
 # Paramètres de la simulation #
@@ -79,22 +80,23 @@ stab = SCAO(PIDRW(RW_P, RW_dP, RW_D), PIDMT(MT_P, MT_dP, MT_D), SCAOratio, I, J)
 ############################
 # Initialisation graphique #
 ############################
-ux = vp.vector(1, 0, 0)
-uy = vp.vector(0, 1, 0)
-uz = vp.vector(0, 0, 1)
-# trièdre (z,x,y)
-axe_x_r = vp.arrow(pos=vp.vector(0, 0, 0), axis=10 * ux, shaftwidth=0.5, color=vp.vector(1, 0, 0))
-axe_y_r = vp.arrow(pos=vp.vector(0, 0, 0), axis=10 * uy, shaftwidth=0.5, color=vp.vector(0, 1, 0))
-axe_z_r = vp.arrow(pos=vp.vector(0, 0, 0), axis=10 * uz, shaftwidth=0.5, color=vp.vector(0, 0, 1))
-# création du satellite avec son repère propre
-axe_x_s = vp.arrow(pos=vp.vector(10, 10, 10), axis=10 * ux, shaftwidth=0.1, color=vp.vector(1, 0, 0))
-axe_y_s = vp.arrow(pos=vp.vector(10, 10, 10), axis=10 * uy, shaftwidth=0.1, color=vp.vector(0, 1, 0))
-axe_z_s = vp.arrow(pos=vp.vector(10, 10, 10), axis=10 * uz, shaftwidth=0.1, color=vp.vector(0, 0, 1))
-sugarbox = vp.box(pos=vp.vector(10, 10, 10), size=vp.vector(lx, ly, lz), axis=vp.vector(0, 0, 0), up=uy)
-satellite = vp.compound([axe_x_s, axe_y_s, axe_z_s, sugarbox])
-# vecteur champ B
-b_vector = vp.arrow(pos=vp.vector(-5, -5, -5), axis=1e5 * vp.vector(B[0][0], B[1][0], B[2][0]), shaftwidth=0.1,
-                    color=vp.vector(1, 1, 1))
+if (Affichage_3D):
+    ux = vp.vector(1, 0, 0)
+    uy = vp.vector(0, 1, 0)
+    uz = vp.vector(0, 0, 1)
+    # trièdre (z,x,y)
+    axe_x_r = vp.arrow(pos=vp.vector(0, 0, 0), axis=10 * ux, shaftwidth=0.5, color=vp.vector(1, 0, 0))
+    axe_y_r = vp.arrow(pos=vp.vector(0, 0, 0), axis=10 * uy, shaftwidth=0.5, color=vp.vector(0, 1, 0))
+    axe_z_r = vp.arrow(pos=vp.vector(0, 0, 0), axis=10 * uz, shaftwidth=0.5, color=vp.vector(0, 0, 1))
+    # création du satellite avec son repère propre
+    axe_x_s = vp.arrow(pos=vp.vector(10, 10, 10), axis=10 * ux, shaftwidth=0.1, color=vp.vector(1, 0, 0))
+    axe_y_s = vp.arrow(pos=vp.vector(10, 10, 10), axis=10 * uy, shaftwidth=0.1, color=vp.vector(0, 1, 0))
+    axe_z_s = vp.arrow(pos=vp.vector(10, 10, 10), axis=10 * uz, shaftwidth=0.1, color=vp.vector(0, 0, 1))
+    sugarbox = vp.box(pos=vp.vector(10, 10, 10), size=vp.vector(lx, ly, lz), axis=vp.vector(0, 0, 0), up=uy)
+    satellite = vp.compound([axe_x_s, axe_y_s, axe_z_s, sugarbox])
+    # vecteur champ B
+    b_vector = vp.arrow(pos=vp.vector(-5, -5, -5), axis=1e5 * vp.vector(B[0][0], B[1][0], B[2][0]), shaftwidth=0.1,
+                        color=vp.vector(1, 1, 1))
 
 
 ####################
@@ -124,12 +126,12 @@ while t<dt*2000:
     W = sim.getNextIteration(M, dw, J, B, I)
 
     #Update monde mesuré
-    mWorld.getNextIteration(W,B)
+    mWorld.getNextIteration(W,B,sim.Q)
 
     # Sauvegarder les valeurs de simulation actuelles: (valeurs mesurées)
     stab.setAttitude(mWorld.QM)
     stab.setRotation(mWorld.WM)
-    stab.setMagneticField(mWorld.BM)
+    stab.setMagneticField(sim.Q.V2R(mWorld.BM))
 
     # Enregistrement de variables pour affichage
     Wr.append(np.linalg.norm(W))
@@ -147,11 +149,12 @@ while t<dt*2000:
         #"|| Q :", str(sim.Q.axis()[:, 0]), "|| M :", str(np.linalg.norm(M)))
 
     # Actualisation de l'affichage graphique
-    b_vector.axis = 1e5 * vp.vector(B[0][0], B[1][0], B[2][0])
-    satellite.rotate(angle=np.linalg.norm(W) * dt, axis=vp.vector(W[0][0], W[1][0], W[2][0]),
-                     origin=vp.vector(10, 10, 10))
+    if (Affichage_3D):
+        b_vector.axis = 1e5 * vp.vector(B[0][0], B[1][0], B[2][0])
+        satellite.rotate(angle=np.linalg.norm(W) * dt, axis=vp.vector(W[0][0], W[1][0], W[2][0]),
+                         origin=vp.vector(10, 10, 10))
 
-    print(environnement.model.getMagneticField())
+    #print(environnement.model.getMagneticField())
     # Rate : réalise 25 fois la boucle par seconde
     #vp.rate(fAffichage)  # vp.rate(1/dt)
     nbit += 1
@@ -168,6 +171,8 @@ while t<dt*2000:
     outputB['B'].append(np.linalg.norm(B))
     outputB['BM'].append(np.linalg.norm(mWorld.BM))
 
+sns.set(context = 'talk', style = 'white')
+plt.rcParams["figure.figsize"] = (8,4)
 plotAttitude()
 
 plt.plot(outputW['t'],outputW['W'],color = 'black')
