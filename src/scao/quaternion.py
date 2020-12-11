@@ -99,11 +99,11 @@ class Quaternion:
 
     def mean(quatInit, LQuat, tol, nMax):
         qt = quatInit
-        alpha = tol + 1  #Initialisation pour entrer dans la boucle
 
+        testTol = False
         compteur = 0  #Compteur tours de boucle
-        while alpha > tol and compteur < nMax:
-            e = 0
+        while not(testTol) and compteur < nMax:
+            e = np.zeros((3,1))
             qtinf = qt.inv()
             for qi in LQuat:
                 eiQuat = qi*qtinf
@@ -113,11 +113,11 @@ class Quaternion:
             e /= (len(LQuat))
 
             alpha = np.linalg.norm(e)
-            eQuat = Quaternion(np.cos(alpha/2),e[0,0]*np.sin(alpha/2),e[1,0]*np.sin(alpha/2),e[2,0]*np.sin(alpha/2))
+            #Au lieu de considérer alpha/2, on prend alpha pour rendre la convergence plus rapide (en supposant que l'initialisation est pas trop loin du résultat)
+            eQuat = Quaternion(np.cos(alpha),e[0,0]*np.sin(alpha),e[1,0]*np.sin(alpha),e[2,0]*np.sin(alpha))
             qt = eQuat*qt
+            testTol = (alpha/2 < tol)
 
             compteur += 1
-        if (compteur == nMax):
-            print(alpha/3.14*180)
 
         return qt

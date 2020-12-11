@@ -1,63 +1,61 @@
 import numpy as np
 from math import sqrt
 from scao.quaternion import Quaternion
+from errorHandler.state import State
+from copy import copy
 
 class UKF:
 
-    def __init__(self,dim,q0,W0,P0,Qcov,Rcov,dt):
-        self.dim = dim  #Dimension of state
-        self.x = [q0,W0]  #Current state
+    def __init__(self,q0,W0,gyroBias,P0,Qcov,Rcov,dt):
+        self.dim = 9  #Dimension of state
+        self.curState = State(q0,W0,gyroBias)  #Current state
         self.P = P0  #Covariance matrix on the state
         self.Qcov = Qcov  #Process noise
-        self.dt = dt  #time step
-        self.Rcov = Rcov #covariance du modèle d'erreur de la mesure de
+        self.Rcov = Rcov #covariance du modèle d'erreur de la mesure
+        self.dt = dt  #Time step
+        self.record = {'stateIn':[],
+                        'xk_': [],
+                        'Pk_': [],
+                        'nu': [],
+                        'K': [],
+                        'stateOut': [],
+                        'PCorr': []}
 
 
-    def sigmaPoints(self):
+    def sigmaPoints(self):  #List of sigma points used to calculate the new mean and standard deviation
         sqrtmatrix = np.linalg.cholesky(self.P + self.Qcov)
+        #print(sqrtmatrix)
 
         res = []
         for i in range(self.dim):
-            res.append( addition(self.x, sqrt(2*self.dim) * np.atleast_2d(sqrtmatrix[:,i]).T) )
-        for i in range(self.dim):
-            res.append( addition(self.x, -sqrt(2*self.dim) * np.atleast_2d(sqrtmatrix[:,i]).T) )
+            ajout = np.atleast_2d(sqrtmatrix[:,i]).T  #sqrt(2*self.dim) *
+            res.append(self.curState.addition(ajout))
+            res.append(self.curState.addition(-ajout))
         return res
 
-    def evolv(self, Xi):  #list of state vectors
-        Yi = []
-        for xi in Xi:
-            ajout = np.zeros((self.dim,1))
-            ajout[0:3] = xi[1]*self.dt
-            Yi.append(addition(xi,ajout))
+    def evolv(self, Xi):  #Xi the list of state vectors
+        Yi = copy(Xi)
+        for yi in Yi:
+            yi.evolv(self.dt)
 
+        return Yi
+
+    def stateMean(self, Yi):  #Return the mean of the list Yi (yMean gave the initialisation for the quaternion mean)
         #Nécessaire pour initialiser la moyenne des quaternions
-        ajout = np.zeros((self.dim,1))
-        ajout[0:3] = self.x[1]*self.dt
-        yMean = addition(self.x,ajout)
-        return yMean, Yi
+        yMean = copy(self.curState)
+        yMean.evolv(self.dt)
 
-    def stateMean(self, yMean, Yi):
-
-        mean = []
-        quatInit = yMean[0]
-        LQuat = [x[0] for x in Yi]
-        mean.append(Quaternion.mean(quatInit,LQuat,5e-2,100))
-        rotMean = np.zeros((3,1))
-        for i in range(2*self.dim):
-            rotMean += Yi[i][1]
-        rotMean /= (2*self.dim)
-        mean.append(rotMean)
-
-        return mean
+        return State.stateMean(yMean.Q,Yi)
 
     def WiCalculus(self, Yi, xk_):
         WiPrime = []
         for yi in Yi:
-            q = yi[0]*xk_[0].inv()
+            q = yi.Q*xk_.Q.inv()
             vec = q.axis()*q.angle()
-            wi = np.zeros((self.dim,1))
+            wi = np.zeros((self.dim,1))  #Reduced state
             wi[0:3] = vec
-            wi[3:6] = yi[1] - xk_[1]
+            wi[3:6] = yi.W - xk_.W
+            wi[6:9] = yi.gyroBias - xk_.gyroBias
             WiPrime.append(wi)
         return WiPrime
 
@@ -73,27 +71,27 @@ class UKF:
         ZRot = predictRotation(Yi)
         ZMagnet = predictMagnetField(Yi,B)
         for rot,mag in zip(ZRot,ZMagnet):
-            zi = np.zeros((self.dim,1))
+            zi = np.zeros((6,1))
             zi[0:3] = rot
             zi[3:6] = mag
             Zi.append(zi)
         return Zi
 
     def innovation(self, zk_, WM, BM):
-        Zmesur = np.zeros((self.dim,1))
+        Zmesur = np.zeros((6,1))
         Zmesur[0:3] = WM
         Zmesur[3:6] = BM
         return Zmesur - zk_
 
     def ObsCov(self, Zi, zk_):
-        cov = np.zeros((self.dim,self.dim))
+        cov = np.zeros((6,6))
         for z in Zi:
             cov += np.dot(z-zk_,(z-zk_).T)
         cov /= (2*self.dim)
         return cov
 
     def crossCorrelationMatrix(self, WiPrime, Zi, zk_):
-        crosscov = np.zeros((self.dim,self.dim))
+        crosscov = np.zeros((self.dim,6))
         for w,z in zip(WiPrime,Zi):
             crosscov += np.dot(w,(z-zk_).T)
         crosscov /= (2*self.dim)
@@ -105,8 +103,11 @@ class UKF:
         '''
         # prediction of state
         Xi = self.sigmaPoints() # Caclul des Wi, calcul des Xi et sauvegarde dans self.sigPoints
-        yMean, Yi = self.evolv(Xi) # process model, le bruit étant intégré dans les sigmaPoints
-        xk_ = self.stateMean(yMean, Yi)
+        #print([xi.Q for xi in Xi])
+        Yi = self.evolv(Xi) # process model, le bruit étant intégré dans les sigmaPoints
+        #print([yi.Q for yi in Yi])
+        xk_ = self.stateMean(Yi)
+        #print(xk_.Q.axis()*xk_.Q.angle())
         WiPrime = self.WiCalculus(Yi, xk_)
         Pk_ = self.aPrioriProcessCov(WiPrime)
         # prediction of measure
@@ -115,31 +116,38 @@ class UKF:
         nu = self.innovation(zk_, WM, BM)
         Pzz = self.ObsCov(Zi, zk_)
         Pnunu = self.Rcov + Pzz
+        #print(Pnunu)
         Pxz = self.crossCorrelationMatrix(WiPrime, Zi, zk_)
         K = kalmanGain(Pxz, Pnunu)
-        xCorr = addition(xk_,np.dot(K,nu))
+        #print(K)
+        #K[0:3,3:6] = np.zeros((3,3))
+        K[6:9,0:6] = np.zeros((3,6))
+        #K = np.zeros((9,6))
+        xCorr = xk_.addition(np.dot(K,nu))
+        #print(xCorr.Q)
         PCorr = Pk_ - np.dot(K, np.dot(Pnunu, K.T))
+
+        #record
+        self.record['stateIn'].append(self.curState)
+        self.record['xk_'].append(xk_)
+        self.record['Pk_'].append(Pk_)
+        self.record['nu'].append(nu)
+        self.record['K'].append(K)
+        self.record['stateOut'].append(xCorr)
+        self.record['PCorr'].append(PCorr)
+
         # Update
-        self.x = xCorr
+        self.curState = xCorr
         self.P = PCorr
 
-def addition(state,L):  #state (quaternion + rotation) and L is an array(two 3-dim vectors = 6-dim vector)
-    alpha = np.linalg.norm(L[0:3])
-    if alpha < 1e-4:  #alpha environ égal à 0
-        direction = np.array([[1.0],[0.0],[0.0]])  #quaternion nul
-    else:
-        direction = L[0:3]/alpha
-    QuatDelta = Quaternion(np.cos(alpha/2),direction[0,0]*np.sin(alpha/2),direction[1,0]*np.sin(alpha/2),direction[2,0]*np.sin(alpha/2))
-    return [state[0] * QuatDelta, state[1] + L[3:6]]
-
 def predictRotation(Yi):
-    ZRot = [x[1] for x in Yi]
+    ZRot = [state.W + state.gyroBias for state in Yi]
     return ZRot
 
 def predictMagnetField(Yi,B):
     ZMagnet = []
     for yi in Yi:
-        q = yi[0]
+        q = yi.Q
         ZMagnet.append(q.R2V(B))
     return ZMagnet
 

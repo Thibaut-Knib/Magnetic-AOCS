@@ -7,6 +7,7 @@ from math import pi
 # Temps
 dt = 50 #pas de temps de la simulation
 fAffichage = 25 #fréquence d'affichage
+Affichage_3D = False
 
 # Géométrie
 lx,ly,lz = 10,10,10 #longueur du satellit selon les axes x,y,z

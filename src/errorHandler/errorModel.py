@@ -34,19 +34,19 @@ class MeasuredWorld:
         return 1 / 2 * np.dot(expQ, self.WM)
 
 
-    def getNextIteration(self,W,B):
-        self.setBM(B)
-        self.setWM(W)
+    def getNextIteration(self,W,B,Qtrue):
+        self.setBM(B,Qtrue)
+        self.setWM(W,Qtrue)
         Qnump = self.QM.vec() + self.dQ() * self.dt  # calcul de la nouvelle orientation
         Qnump /= np.linalg.norm(Qnump)
         self.QM = Quaternion(*Qnump[:, 0])
         self.t += self.dt
 
-    def setBM(self,B):
-        self.BM = measuredValue(B, self.magneticModel, self.t)
+    def setBM(self,B,Q):
+        self.BM = measuredValue(Q.R2V(B), self.magneticModel, self.t)
 
-    def setWM(self,W):
-        self.WM = measuredValue(W, self.gyroModel, self.t)
+    def setWM(self,W,Q):
+        self.WM = Q.V2R(measuredValue(Q.R2V(W), self.gyroModel, self.t))
 
 def measuredValue(trueValue, model, t):
 

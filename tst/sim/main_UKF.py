@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 from scao.quaternion import Quaternion
 from errorHandler.errorModel import MeasuredWorld
 from errorHandler import filter as flt
+from errorHandler.state import State
 
 ###############################
 # Paramètres de la simulation #
@@ -42,6 +43,9 @@ I = np.diag((m * (ly ** 2 + lz ** 2) / 3, m * (lx ** 2 + lz ** 2) / 3,
 L0 = np.dot(I, W0)
 Wr = []
 qs = []
+qm = []
+qc = []
+sigma1 = []
 
 # Environnement
 orbite = Orbit(omega, i, e, r_p, mu, tau)
@@ -81,49 +85,55 @@ stab = SCAO(PIDRW(RW_P, RW_dP, RW_D), PIDMT(MT_P, MT_dP, MT_D), SCAOratio, I, J)
 # Initialisation du filtre #
 ############################
 
-dimState = 6 # 3 pour les quaternions, 3 pour la rotation
+dimState = 9 # 3 pour les quaternions, 3 pour la rotation, 3 pour les biais
 dimObs = 6
+CovRot = 5e-5  #Paramètre à régler pour le bon fonctionnement du filtre
 
-P0 = np.eye(dimState)*1e-4
+P0 = np.eye(dimState)*1e-10
 Qcov = np.zeros((dimState,dimState))
-Qcov[3,3],Qcov[4,4],Qcov[5,5] = 1.,1.,1.  #Grosse incertitude sur la vitesse de rotation afin de permettre la mise à jour
+Qcov[0:3,0:3] = 1e-4*np.eye(3)
+Qcov[3:6,3:6] = CovRot*np.eye(3)
+Qcov[6:9,6:9] = 1e-8*np.eye(3)
 Rcov = np.zeros((dimObs,dimObs)) # ATTENTION, dimension de la mesure ici, pas de l'état
-Rcov[0,0] = gyroModel[0][0,0] + gyroModel[1][0,0]
-Rcov[1,1] = gyroModel[0][1,0] + gyroModel[1][1,0]
-Rcov[2,2] = gyroModel[0][2,0] + gyroModel[1][2,0]
-Rcov[3,3] = magneticModel[0][0,0] + magneticModel[1][0,0]
-Rcov[4,4] = magneticModel[0][1,0] + magneticModel[1][1,0]
-Rcov[5,5] = magneticModel[0][2,0] + magneticModel[1][2,0]
+Rcov[0,0] = gyroModel[1][0,0]**2
+Rcov[1,1] = gyroModel[1][1,0]**2
+Rcov[2,2] = gyroModel[1][2,0]**2
+Rcov[3,3] = magneticModel[1][0,0]**2
+Rcov[4,4] = magneticModel[1][1,0]**2
+Rcov[5,5] = magneticModel[1][2,0]**2
 
-ukf = flt.UKF(dimState,Q0,W0,P0,Qcov,Rcov,dt)
+ukf = flt.UKF(Q0,W0,gyroModel[0],P0,Qcov,Rcov,dt)
 
 ############################
 # Initialisation graphique #
 ############################
-ux = vp.vector(1, 0, 0)
-uy = vp.vector(0, 1, 0)
-uz = vp.vector(0, 0, 1)
-# trièdre (z,x,y)
-axe_x_r = vp.arrow(pos=vp.vector(0, 0, 0), axis=10 * ux, shaftwidth=0.5, color=vp.vector(1, 0, 0))
-axe_y_r = vp.arrow(pos=vp.vector(0, 0, 0), axis=10 * uy, shaftwidth=0.5, color=vp.vector(0, 1, 0))
-axe_z_r = vp.arrow(pos=vp.vector(0, 0, 0), axis=10 * uz, shaftwidth=0.5, color=vp.vector(0, 0, 1))
-# création du satellite avec son repère propre
-axe_x_s = vp.arrow(pos=vp.vector(10, 10, 10), axis=10 * ux, shaftwidth=0.1, color=vp.vector(1, 0, 0))
-axe_y_s = vp.arrow(pos=vp.vector(10, 10, 10), axis=10 * uy, shaftwidth=0.1, color=vp.vector(0, 1, 0))
-axe_z_s = vp.arrow(pos=vp.vector(10, 10, 10), axis=10 * uz, shaftwidth=0.1, color=vp.vector(0, 0, 1))
-sugarbox = vp.box(pos=vp.vector(10, 10, 10), size=vp.vector(lx, ly, lz), axis=vp.vector(0, 0, 0), up=uy)
-satellite = vp.compound([axe_x_s, axe_y_s, axe_z_s, sugarbox])
-# vecteur champ B
-b_vector = vp.arrow(pos=vp.vector(-5, -5, -5), axis=1e5 * vp.vector(B[0][0], B[1][0], B[2][0]), shaftwidth=0.1,
-                    color=vp.vector(1, 1, 1))
+if (Affichage_3D):
+    ux = vp.vector(1, 0, 0)
+    uy = vp.vector(0, 1, 0)
+    uz = vp.vector(0, 0, 1)
+    # trièdre (z,x,y)
+    axe_x_r = vp.arrow(pos=vp.vector(0, 0, 0), axis=10 * ux, shaftwidth=0.5, color=vp.vector(1, 0, 0))
+    axe_y_r = vp.arrow(pos=vp.vector(0, 0, 0), axis=10 * uy, shaftwidth=0.5, color=vp.vector(0, 1, 0))
+    axe_z_r = vp.arrow(pos=vp.vector(0, 0, 0), axis=10 * uz, shaftwidth=0.5, color=vp.vector(0, 0, 1))
+    # création du satellite avec son repère propre
+    axe_x_s = vp.arrow(pos=vp.vector(10, 10, 10), axis=10 * ux, shaftwidth=0.1, color=vp.vector(1, 0, 0))
+    axe_y_s = vp.arrow(pos=vp.vector(10, 10, 10), axis=10 * uy, shaftwidth=0.1, color=vp.vector(0, 1, 0))
+    axe_z_s = vp.arrow(pos=vp.vector(10, 10, 10), axis=10 * uz, shaftwidth=0.1, color=vp.vector(0, 0, 1))
+    sugarbox = vp.box(pos=vp.vector(10, 10, 10), size=vp.vector(lx, ly, lz), axis=vp.vector(0, 0, 0), up=uy)
+    satellite = vp.compound([axe_x_s, axe_y_s, axe_z_s, sugarbox])
+    # vecteur champ B
+    b_vector = vp.arrow(pos=vp.vector(-5, -5, -5), axis=1e5 * vp.vector(B[0][0], B[1][0], B[2][0]), shaftwidth=0.1,
+                        color=vp.vector(1, 1, 1))
 
 
 ####################
 # Fonctions utiles #
 ####################
 def plotAttitude():
+    color = ['b','r','g','black']
     for i in range(4):
-        plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.vec()[i, 0] for q in qs])
+        plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.vec()[i, 0] for q in qs], color = color[i])
+        plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.vec()[i, 0] for q in qc], color = color[i], linestyle = 'dotted')
     plt.xlabel("t (orbits)")
     plt.ylabel("Quaternion component")
     plt.show()
@@ -133,9 +143,9 @@ def plotAttitude():
 # Boucle principale #
 #####################
 output = {'t': [], 'M': [], 'U': []}
-outputW = {'t': [], 'W': [], 'WM': []}
+outputW = {'t': [], 'W': [], 'WM': [], 'WC': [], 'sig': []}
 outputB = {'t': [], 'B': [], 'BM': []}
-while t<dt*2000:
+while t<dt*1000:
     # on récupère la valeur actuelle du champ magnétique et on actualise l'affichage du champ B
     orbite.setTime(t)  # orbite.setTime(t)
     environnement.setPosition(orbite.getPosition())
@@ -145,17 +155,20 @@ while t<dt*2000:
     W = sim.getNextIteration(M, dw, J, B, I)
 
     #Update monde mesuré
-    mWorld.getNextIteration(W,B)
+    mWorld.getNextIteration(W,B,sim.Q)
     # Correction des erreurs avec un filtre
     ukf.errorCorrection(mWorld.WM, mWorld.BM, B)
     # Sauvegarder les valeurs de simulation actuelles: (valeurs mesurées)
-    stab.setAttitude(ukf.x[0])
-    stab.setRotation(mWorld.WM)
-    stab.setMagneticField(mWorld.BM) #non recalé
+    stab.setAttitude(ukf.curState.Q)
+    stab.setRotation(ukf.curState.W)
+    stab.setMagneticField(sim.Q.V2R(mWorld.BM)) #non recalé
 
     # Enregistrement de variables pour affichage
     Wr.append(np.linalg.norm(W))
     qs.append(sim.Q)
+    qm.append(mWorld.QM)
+    qc.append(ukf.curState.Q)
+    sigma1.append(sqrt(ukf.P[0,0]))
 
     # Prise de la commande de stabilisation
     dw, M = stab.getCommand(Qt)  # dans Rv
@@ -169,11 +182,11 @@ while t<dt*2000:
         #"|| Q :", str(sim.Q.axis()[:, 0]), "|| M :", str(np.linalg.norm(M)))
 
     # Actualisation de l'affichage graphique
-    b_vector.axis = 1e5 * vp.vector(B[0][0], B[1][0], B[2][0])
-    satellite.rotate(angle=np.linalg.norm(W) * dt, axis=vp.vector(W[0][0], W[1][0], W[2][0]),
-                     origin=vp.vector(10, 10, 10))
+    if (Affichage_3D):
+        b_vector.axis = 1e5 * vp.vector(B[0][0], B[1][0], B[2][0])
+        satellite.rotate(angle=np.linalg.norm(W) * dt, axis=vp.vector(W[0][0], W[1][0], W[2][0]),
+                         origin=vp.vector(10, 10, 10))
 
-    #print(environnement.model.getMagneticField())
     # Rate : réalise 25 fois la boucle par seconde
     #vp.rate(fAffichage)  # vp.rate(1/dt)
     nbit += 1
@@ -183,19 +196,32 @@ while t<dt*2000:
     output['U'].append(U)
 
     outputW['t'].append(t)
-    outputW['W'].append(np.linalg.norm(W))
-    outputW['WM'].append(np.linalg.norm(mWorld.WM))
+    outputW['W'].append(W)
+    outputW['WM'].append(mWorld.WM)
+    outputW['WC'].append(ukf.curState.W)
+    outputW['sig'].append(ukf.P[3,3])
 
     outputB['t'].append(t)
     outputB['B'].append(np.linalg.norm(B))
     outputB['BM'].append(np.linalg.norm(mWorld.BM))
 
-plotAttitude()
+#plotAttitude()
 
-plt.plot(outputW['t'],outputW['W'],color = 'black')
-plt.plot(outputW['t'],outputW['WM'],color = 'r')
+#print([ukf.record['K'][i][3:6,0:6] for i in range(50,55)])
+#print([ukf.record['stateOut'][i].gyroBias for i in range(310,325)])
+
+plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] for q in qs], color = 'black')
+plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] for q in qm], color = 'r')
+plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] for q in qc], color = 'g')
+plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] + 3*s for  q,s in zip(qs,sigma1)], color = 'b')
+plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] - 3*s for  q,s in zip(qs,sigma1)], color = 'b')
+plt.xlabel("t (orbits)")
+plt.ylabel("Quaternion component")
 plt.show()
 
-#plt.plot(outputB['t'],outputB['B'],color = 'black')
-#plt.plot(outputB['t'],outputB['BM'],color = 'r')
-#plt.show()
+plt.plot(range(len(outputW['W'])),[x[0,0] for x in outputW['W']],color = 'black')
+plt.plot(range(len(outputW['WM'])),[x[0,0]for x in outputW['WM']],color = 'r')
+plt.plot(range(len(outputW['WC'])),[x[0,0] for x in outputW['WC']],color = 'g')
+plt.plot(range(len(outputW['sig'])),[x1[0,0] + 3*sqrt(x2) for x1,x2 in zip(outputW['W'],outputW['sig'])],color = 'b')
+plt.plot(range(len(outputW['sig'])),[x1[0,0] - 3*sqrt(x2) for x1,x2 in zip(outputW['W'],outputW['sig'])],color = 'b')
+plt.show()
