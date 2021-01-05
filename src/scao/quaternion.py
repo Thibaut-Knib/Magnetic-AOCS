@@ -41,7 +41,7 @@ class Quaternion:
         return Quaternion(
             self.a*value.a - self.b*value.b - self.c*value.c - self.d*value.d,
             self.b*value.a + self.a*value.b - self.d*value.c + self.c*value.d,
-            self.c*value.a + self.d*value.b + self.a*value.c - self.d*value.d,
+            self.c*value.a + self.d*value.b + self.a*value.c - self.b*value.d,
             self.d*value.a - self.c*value.b + self.b*value.c + self.a*value.d,
         )
 
