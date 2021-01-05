@@ -1,5 +1,6 @@
-from scao.quaternion import Quaternion
 import numpy as np
+from scao.quaternion import Quaternion, averageQuaternions
+
 
 class State:
 
@@ -16,6 +17,7 @@ class State:
             direction = reducedState[0:3,0]/alpha
         C,S = np.cos(alpha/2),np.sin(alpha/2)
         QuatDelta = Quaternion(C,direction[0]*S,direction[1]*S,direction[2]*S)
+
 
         return State(self.Q * QuatDelta, self.W + reducedState[3:6], self.gyroBias + reducedState[6:9])
 
@@ -35,11 +37,14 @@ class State:
         Qnump = self.Q.vec() + self.dQ() * dt  # calcul de la nouvelle orientation
         self.Q = Quaternion(*Qnump[:, 0])
 
-    def stateMean(quatInit,LState):
+    def stateMean(self, quatInit, LState):
 
-        LQuat = [state.Q for state in LState]
-        #quatMean = Quaternion(sum([quat[0] for quat in LQuat]),sum([quat[1] for quat in LQuat]),sum([quat[2] for quat in LQuat]),sum([quat[3] for quat in LQuat]))
-        quatMean = Quaternion.mean(quatInit,LQuat,1e-2,1000)  #Quaternion moyen
+        # LQuat = [state.Q for state in LState]
+        ##quatMean = Quaternion(sum([quat[0] for quat in LQuat]),sum([quat[1] for quat in LQuat]),sum([quat[2] for quat in LQuat]),sum([quat[3] for quat in LQuat]))
+        # quatMean = Quaternion.mean(quatInit,LQuat,1e-2,1000)  #Quaternion moyen
+
+        quatMean = self.averageQuat(quatInit, LState)
+
 
         rotMean = np.zeros((3,1))  #Rotation moyenne
         biasMean = np.zeros((3,1))  #Biais moyen
@@ -51,3 +56,11 @@ class State:
         biasMean /= length
 
         return State(quatMean, rotMean, biasMean)
+
+    def averageQuat(self, quatInit, statsList):
+        """compute quaternion average with other methode"""
+        LQuat = [state.Q for state in statsList]
+        LQuat.append(quatInit)
+        quaternionMatrix = np.array([[quat.a, quat.b, quat.c, quat.d] for quat in LQuat])
+        quatMean = Quaternion(*averageQuaternions(quaternionMatrix))
+        return quatMean

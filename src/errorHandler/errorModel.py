@@ -1,6 +1,8 @@
 from random import gauss
-from scao.quaternion import Quaternion
+
 import numpy as np
+from scao.quaternion import Quaternion
+
 
 class MeasuredWorld:
 
@@ -35,10 +37,9 @@ class MeasuredWorld:
 
 
     def getNextIteration(self,W,B,Qtrue):
-        self.setBM(B,Qtrue)
-        self.setWM(W,Qtrue)
+        self.setBM(B, Qtrue)
+        self.setWM(W, Qtrue)
         Qnump = self.QM.vec() + self.dQ() * self.dt  # calcul de la nouvelle orientation
-        Qnump /= np.linalg.norm(Qnump)
         self.QM = Quaternion(*Qnump[:, 0])
         self.t += self.dt
 

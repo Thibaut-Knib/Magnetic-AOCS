@@ -1,13 +1,21 @@
 import numpy as np
-from math import sqrt
-from scao.quaternion import Quaternion
 from errorHandler.state import State
 from copy import copy
 
 class UKF:
 
     def __init__(self,q0,W0,gyroBias,P0,Qcov,Rcov,dt):
-        self.dim = 9  #Dimension of state
+        """UKF filter
+        :param q0: Initial estimation of the attitude quaternion
+        :param W0: Initial estimation of the rotational velocity componant
+        :param gyroBias: Initial estimation of gyroscop bias error
+        :param P0: Initial estimation of the Likelyhood covariance Matrix
+        :param Qcov: Model noise covariace matrix (dimention 9, first attitude noise, then Velocity noise, then Biais Noise)
+        :param Rcov: Measurment Noise covariance matrix (dimention 6, first gyroscop, then Magnetometer)
+        :param dt: Time step of the different estimations
+        """
+
+        self.dim = 9  # Dimension of state (
         self.curState = State(q0,W0,gyroBias)  #Current state
         self.P = P0  #Covariance matrix on the state
         self.Qcov = Qcov  #Process noise
@@ -21,19 +29,29 @@ class UKF:
                         'stateOut': [],
                         'PCorr': []}
 
+    def sigmaPoints(self):
+        """ Generate a List of sigma points used to estimate the  mean and standard deviation of the pediction.
+        Ref : Section 3.1 and 3.2 of Kraft 2003
+        Cholesky algorythm is used to obtain the "square root matrix" of P + Q 
+        """
+        try:
+            sqrtmatrix = np.linalg.cholesky(self.P + self.Qcov)
+            # print(sqrtmatrix)
+        except np.linalg.LinAlgError as e:
+            print(self.P)
+            print(self.Qcov)
+            raise Exception('Stranger things') from e
 
-    def sigmaPoints(self):  #List of sigma points used to calculate the new mean and standard deviation
-        sqrtmatrix = np.linalg.cholesky(self.P + self.Qcov)
-        #print(sqrtmatrix)
+        res = [self.curState]  ## add Current estimate as a sigma point
 
-        res = []
         for i in range(self.dim):
             ajout = np.atleast_2d(sqrtmatrix[:,i]).T  #sqrt(2*self.dim) *
             res.append(self.curState.addition(ajout))
             res.append(self.curState.addition(-ajout))
+
         return res
 
-    def evolv(self, Xi):  #Xi the list of state vectors
+    def evolvSigmaPoints(self, Xi):  #Xi the list of state vectors
         Yi = copy(Xi)
         for yi in Yi:
             yi.evolv(self.dt)
@@ -43,11 +61,13 @@ class UKF:
     def stateMean(self, Yi):  #Return the mean of the list Yi (yMean gave the initialisation for the quaternion mean)
         #Nécessaire pour initialiser la moyenne des quaternions
         yMean = copy(self.curState)
-        yMean.evolv(self.dt)
+        # yMean.evolv(self.dt)
 
-        return State.stateMean(yMean.Q,Yi)
+        return self.curState.stateMean(yMean.Q, Yi)
 
     def WiCalculus(self, Yi, xk_):
+        """Calculation of the transformed sigma points error vectors.
+        WiPrime = Yi - xk_ """
         WiPrime = []
         for yi in Yi:
             q = yi.Q*xk_.Q.inv()
@@ -66,12 +86,13 @@ class UKF:
         Pk_ /= (2*self.dim)
         return Pk_
 
-    def predictObs(self, Yi, B):
+    def predictObs(self, Yi, LocalMagField_Rr):
+
         Zi = []
         ZRot = predictRotation(Yi)
-        ZMagnet = predictMagnetField(Yi,B)
-        for rot,mag in zip(ZRot,ZMagnet):
-            zi = np.zeros((6,1))
+        ZMagnet = predictMagnetField(Yi, LocalMagField_Rr)
+        for rot, mag in zip(ZRot, ZMagnet):
+            zi = np.zeros((6, 1))
             zi[0:3] = rot
             zi[3:6] = mag
             Zi.append(zi)
@@ -84,55 +105,77 @@ class UKF:
         return Zmesur - zk_
 
     def ObsCov(self, Zi, zk_):
+        """Covariance between Expected measurments
+         Correspond to Eq 68 from Kraft 2003
+         :param Zi: Expected measurments from Sigma points
+         :param zk_: Mea, expected measurment from Sigma point
+         :return: P_zz Ucertainty of the predicted measurment
+
+         """
         cov = np.zeros((6,6))
         for z in Zi:
             cov += np.dot(z-zk_,(z-zk_).T)
-        cov /= (2*self.dim)
+        cov /= len(Zi)
+
         return cov
 
     def crossCorrelationMatrix(self, WiPrime, Zi, zk_):
-        crosscov = np.zeros((self.dim,6))
-        for w,z in zip(WiPrime,Zi):
-            crosscov += np.dot(w,(z-zk_).T)
-        crosscov /= (2*self.dim)
+        """
+        Compute cross corelation matrix from the
+        :param WiPrime: Error state between sigma points and their mean
+        :param Zi: Expected measurements from sigmapoints
+        :param zk_: mean expected measurement
+        :return: Pxz Cross correlation matrix between sigma points and measurments
+        """
+        crosscov = np.zeros((self.dim, 6))
+        for w, z in zip(WiPrime, Zi):
+            crosscov += np.dot(w, (z - zk_).T)
+
+        crosscov /= len(Zi)
+
         return crosscov
 
-    def errorCorrection(self, WM, BM, B):
+    def errorCorrection(self, WM, BM, LocalMagField_Rr, u=0):
         '''
         Renvoie au pas de temps de l'appel la correction de la mesure
         '''
+
         # prediction of state
         Xi = self.sigmaPoints() # Caclul des Wi, calcul des Xi et sauvegarde dans self.sigPoints
         #print([xi.Q for xi in Xi])
-        Yi = self.evolv(Xi) # process model, le bruit étant intégré dans les sigmaPoints
+        Yi = self.evolvSigmaPoints(Xi)  # process model, le bruit étant intégré dans les sigmaPoints
         #print([yi.Q for yi in Yi])
         xk_ = self.stateMean(Yi)
         #print(xk_.Q.axis()*xk_.Q.angle())
         WiPrime = self.WiCalculus(Yi, xk_)
         Pk_ = self.aPrioriProcessCov(WiPrime)
+
         # prediction of measure
-        Zi = self.predictObs(Yi, B)
+        Zi = self.predictObs(Yi, LocalMagField_Rr)
         zk_ = obsMean(Zi)
         nu = self.innovation(zk_, WM, BM)
+
         Pzz = self.ObsCov(Zi, zk_)
         Pnunu = self.Rcov + Pzz
         #print(Pnunu)
         Pxz = self.crossCorrelationMatrix(WiPrime, Zi, zk_)
-        K = kalmanGain(Pxz, Pnunu)
+
+        kalmanGain_k = cumputeKalmanGain(Pxz, Pnunu)
         #print(K)
         #K[0:3,3:6] = np.zeros((3,3))
-        K[6:9,0:6] = np.zeros((3,6))
+        # K[6:9,0:6] = np.zeros((3,6))
         #K = np.zeros((9,6))
-        xCorr = xk_.addition(np.dot(K,nu))
-        #print(xCorr.Q)
-        PCorr = Pk_ - np.dot(K, np.dot(Pnunu, K.T))
+
+        xCorr = xk_.addition(np.dot(kalmanGain_k, nu))
+
+        PCorr = Pk_ - np.dot(kalmanGain_k, np.dot(Pnunu, kalmanGain_k.T))
 
         #record
         self.record['stateIn'].append(self.curState)
         self.record['xk_'].append(xk_)
         self.record['Pk_'].append(Pk_)
         self.record['nu'].append(nu)
-        self.record['K'].append(K)
+        self.record['K'].append(kalmanGain_k)
         self.record['stateOut'].append(xCorr)
         self.record['PCorr'].append(PCorr)
 
@@ -142,18 +185,21 @@ class UKF:
 
 def predictRotation(Yi):
     ZRot = [state.W + state.gyroBias for state in Yi]
+    ZRot = [state.W for state in Yi]
     return ZRot
 
-def predictMagnetField(Yi,B):
+
+def predictMagnetField(Yi, LocalMagField_Rr):
     ZMagnet = []
     for yi in Yi:
         q = yi.Q
-        ZMagnet.append(q.R2V(B))
+        ZMagnet.append(q.R2V(LocalMagField_Rr))
     return ZMagnet
 
 def obsMean(Zi):
     mean = sum(Zi)/len(Zi)
     return mean
 
-def kalmanGain(Pxz, Pnunu):
+
+def cumputeKalmanGain(Pxz, Pnunu):
     return np.dot(Pxz, np.linalg.inv(Pnunu))
