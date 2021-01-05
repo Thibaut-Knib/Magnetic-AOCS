@@ -1,6 +1,13 @@
-Créer une classe state
-gestion de la dimension (cf. 6 et 3)
 
-add
-sns.set(context = 'talk', style = 'white')
-plt.rcParams["figure.figsize"] = (8,4)
+
+Changement de code dans wmm2020 (Antoine Tavant)
+
+
+
+
+
+la partie "présentation du problème" (partie 4.1) est bien, mais elle
+serait plus claire et plus simple à expliquer avec quelques
+figures d'évolution temporelle. Il serait intéressant également
+de donner des ordres de grandeurs pour les bruits des
+capteurs réels.
