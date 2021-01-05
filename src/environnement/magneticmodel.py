@@ -2,8 +2,7 @@ import sys
 sys.path.append('..')
 from math import *
 import numpy as np
-from random import *
-import wmm2015 as wmm
+import wmm2020 as wmm  # wmm2020 is in ./src/
 from src.environnement.magneticdipole import idm
 
 class Model:
