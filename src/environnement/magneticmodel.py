@@ -35,8 +35,14 @@ class Model:
         """
         In Tesla, in the geocentrical frame of reference.
         """
-        mag = wmm.wmm(self.i, self.u, self.r/1000 - 6371.0088, 2019)
-        mag_orbital =  1e-9*np.array([[-mag.down.values[0][0]], [mag.north.values[0][0]], [mag.east.values[0][0]]]) #in the orbital frame
+
+        # with wmm2015 :
+        # mag = wmm.wmm(self.i, self.u, self.r/1000 - 6371.0088, 2019)
+        # mag_orbital =  1e-9*np.array([[-mag.down.values[0][0]], [mag.north.values[0][0]], [mag.east.values[0][0]]]) #in the orbital frame
+
+        # using modified wmm2020 to get rid of th xarray dataset that is way to long
+        mag = wmm.wmm_unique(self.i, self.u, self.r / 1000 - 6371.0088, 2019)
+        mag_orbital = 1e-9 * np.array([[-mag["down"]], [mag["north"]], [mag["east"]]])  # in the orbital frame
 
         return np.dot(self.A_yx(), mag_orbital) # in the intertial frame
 
@@ -44,7 +50,8 @@ class Model:
         """
         In Tesla, in the local orbital frame.
         """
-        return np.dot(self.A_xs(), np.dot(self.A_sy(), idm(self.i, self.u, self.r))) #To be corrected !!!! not in the right frame
+        return np.dot(self.A_xs(),
+                      np.dot(self.A_sy(), idm(self.i, self.u, self.r)))  # To be corrected !!!! not in the right frame
 
     def A_sx(self): #V_s = A_sx . V_x ---
         cu = cos(self.u)
