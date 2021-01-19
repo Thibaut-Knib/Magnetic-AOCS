@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 from scao.quaternion import Quaternion
 from errorHandler.errorModel import MeasuredWorld
 from errorHandler import filter as flt
+from math import log10 as log10
 
 from tqdm import tqdm
 import seaborn as sns
