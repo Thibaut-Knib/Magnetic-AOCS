@@ -4,10 +4,11 @@ from copy import copy
 
 class UKF:
 
-    def __init__(self,q0,W0,gyroBias,P0,Qcov,Rcov,dt):
+    def __init__(self,q0,W0,I,gyroBias,P0,Qcov,Rcov,dt):
         """UKF filter
         :param q0: Initial estimation of the attitude quaternion
         :param W0: Initial estimation of the rotational velocity componant
+        :param I: Inertial Matrix of the satellite
         :param gyroBias: Initial estimation of gyroscop bias error
         :param P0: Initial estimation of the Likelyhood covariance Matrix
         :param Qcov: Model noise covariace matrix (dimention 9, first attitude noise, then Velocity noise, then Biais Noise)
@@ -16,7 +17,7 @@ class UKF:
         """
 
         self.dim = 9  # Dimension of state (
-        self.curState = State(q0,W0,gyroBias)  #Current state
+        self.curState = State(q0,W0,I,gyroBias)  #Current state
         self.P = P0  #Covariance matrix on the state
         self.Qcov = Qcov  #Process noise
         self.Rcov = Rcov #covariance du modèle d'erreur de la mesure
@@ -27,12 +28,13 @@ class UKF:
                         'nu': [],
                         'K': [],
                         'stateOut': [],
-                        'PCorr': []}
+                        'PCorr': [],
+                        'NormKal': []}
 
     def sigmaPoints(self):
         """ Generate a List of sigma points used to estimate the  mean and standard deviation of the pediction.
         Ref : Section 3.1 and 3.2 of Kraft 2003
-        Cholesky algorythm is used to obtain the "square root matrix" of P + Q 
+        Cholesky algorythm is used to obtain the "square root matrix" of P + Q
         """
         try:
             sqrtmatrix = np.linalg.cholesky(self.P + self.Qcov)
@@ -51,10 +53,10 @@ class UKF:
 
         return res
 
-    def evolvSigmaPoints(self, Xi):  #Xi the list of state vectors
+    def evolvSigmaPoints(self, u, Xi):  #Xi the list of state vectors
         Yi = copy(Xi)
         for yi in Yi:
-            yi.evolv(self.dt)
+            yi.evolv(u,self.dt)
 
         return Yi
 
@@ -135,7 +137,7 @@ class UKF:
 
         return crosscov
 
-    def errorCorrection(self, WM, BM, LocalMagField_Rr, u=0):
+    def errorCorrection(self, WM, BM, LocalMagField_Rr, magMoment=np.array([[0],[0],[0]])):
         '''
         Renvoie au pas de temps de l'appel la correction de la mesure
         '''
@@ -143,7 +145,7 @@ class UKF:
         # prediction of state
         Xi = self.sigmaPoints() # Caclul des Wi, calcul des Xi et sauvegarde dans self.sigPoints
         #print([xi.Q for xi in Xi])
-        Yi = self.evolvSigmaPoints(Xi)  # process model, le bruit étant intégré dans les sigmaPoints
+        Yi = self.evolvSigmaPoints(self.curState.Q.V2R(np.cross(magMoment, self.curState.Q.R2V(BM), axisa=0, axisb=0, axisc=0)),Xi) # couple dans Rv du au MC, Xi)  # process model, le bruit étant intégré dans les sigmaPoints
         #print([yi.Q for yi in Yi])
         xk_ = self.stateMean(Yi)
         #print(xk_.Q.axis()*xk_.Q.angle())
@@ -178,6 +180,7 @@ class UKF:
         self.record['K'].append(kalmanGain_k)
         self.record['stateOut'].append(xCorr)
         self.record['PCorr'].append(PCorr)
+        self.record['NormKal'].append(np.linalg.norm(Pk_[0:3][0:3]))
 
         # Update
         self.curState = xCorr

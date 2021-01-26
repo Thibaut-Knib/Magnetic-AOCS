@@ -22,6 +22,7 @@ from scao.quaternion import Quaternion
 from errorHandler.errorModel import MeasuredWorld
 from errorHandler import filter as flt
 from errorHandler.state import State
+import seaborn as sns
 
 ###############################
 # Paramètres de la simulation #
@@ -87,11 +88,11 @@ stab = SCAO(PIDRW(RW_P, RW_dP, RW_D), PIDMT(MT_P, MT_dP, MT_D), SCAOratio, I, J)
 
 dimState = 9 # 3 pour les quaternions, 3 pour la rotation, 3 pour les biais
 dimObs = 6
-CovRot = 5e-5  #Paramètre à régler pour le bon fonctionnement du filtre
+CovRot = 1e-8  #Paramètre à régler pour le bon fonctionnement du filtre
 
-P0 = np.eye(dimState)*1e-10
+P0 = np.eye(dimState)*1e-5
 Qcov = np.zeros((dimState,dimState))
-Qcov[0:3,0:3] = 1e-4*np.eye(3)
+Qcov[0:3,0:3] = 1e-8*np.eye(3)
 Qcov[3:6,3:6] = CovRot*np.eye(3)
 Qcov[6:9,6:9] = 1e-8*np.eye(3)
 Rcov = np.zeros((dimObs,dimObs)) # ATTENTION, dimension de la mesure ici, pas de l'état
@@ -102,7 +103,7 @@ Rcov[3,3] = magneticModel[1][0,0]**2
 Rcov[4,4] = magneticModel[1][1,0]**2
 Rcov[5,5] = magneticModel[1][2,0]**2
 
-ukf = flt.UKF(Q0,W0,gyroModel[0],P0,Qcov,Rcov,dt)
+ukf = flt.UKF(Q0,W0,I,gyroModel[0],P0,Qcov,Rcov,dt)
 
 ############################
 # Initialisation graphique #
@@ -157,7 +158,7 @@ while t<dt*1000:
     #Update monde mesuré
     mWorld.getNextIteration(W,B,sim.Q)
     # Correction des erreurs avec un filtre
-    ukf.errorCorrection(mWorld.WM, mWorld.BM, B)
+    ukf.errorCorrection(mWorld.WM, mWorld.BM, B, M)
     # Sauvegarder les valeurs de simulation actuelles: (valeurs mesurées)
     stab.setAttitude(ukf.curState.Q)
     stab.setRotation(ukf.curState.W)
@@ -210,18 +211,32 @@ while t<dt*1000:
 #print([ukf.record['K'][i][3:6,0:6] for i in range(50,55)])
 #print([ukf.record['stateOut'][i].gyroBias for i in range(310,325)])
 
-plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] for q in qs], color = 'black')
-plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] for q in qm], color = 'r')
-plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] for q in qc], color = 'g')
-plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] + 3*s for  q,s in zip(qs,sigma1)], color = 'b')
-plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] - 3*s for  q,s in zip(qs,sigma1)], color = 'b')
-plt.xlabel("t (orbits)")
-plt.ylabel("Quaternion component")
+#print(ukf.record['K'][3000])
+
+sns.set(context = 'talk', style = 'white')
+plt.rcParams["figure.figsize"] = (8,4)
+
+plt.plot(range(1000),ukf.record['NormKal'])
 plt.show()
 
-plt.plot(range(len(outputW['W'])),[x[0,0] for x in outputW['W']],color = 'black')
-plt.plot(range(len(outputW['WM'])),[x[0,0]for x in outputW['WM']],color = 'r')
-plt.plot(range(len(outputW['WC'])),[x[0,0] for x in outputW['WC']],color = 'g')
-plt.plot(range(len(outputW['sig'])),[x1[0,0] + 3*sqrt(x2) for x1,x2 in zip(outputW['W'],outputW['sig'])],color = 'b')
-plt.plot(range(len(outputW['sig'])),[x1[0,0] - 3*sqrt(x2) for x1,x2 in zip(outputW['W'],outputW['sig'])],color = 'b')
+plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] for q in qs], color = 'black', label = 'Vraie valeur')
+plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] for q in qm], color = 'r', label = 'Valeur bruitée')
+plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] for q in qc], color = 'g', label = 'Valeur recalé')
+plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] + 3*s for  q,s in zip(qc,sigma1)], color = 'b', label = 'Encadrement à 3$\sigma$')
+plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] - 3*s for  q,s in zip(qc,sigma1)], color = 'b')
+plt.xlabel("t (orbites)")
+plt.ylabel("Élément du quaternion")
+plt.title("Evolution d'un élément du quaternion recalé")
+plt.legend(loc = 'best')
+plt.show()
+
+plt.plot([dt * j / orbite.getPeriod() for j in range(len(outputW['W']))],[x[0,0] for x in outputW['W']],color = 'black', label = 'Vraie valeur')
+plt.plot([dt * j / orbite.getPeriod() for j in range(len(outputW['W']))],[x[0,0]for x in outputW['WM']],color = 'r', label = 'Valeur bruitée')
+plt.plot([dt * j / orbite.getPeriod() for j in range(len(outputW['W']))],[x[0,0] for x in outputW['WC']],color = 'g', label = 'Valeur recalé')
+plt.plot([dt * j / orbite.getPeriod() for j in range(len(outputW['W']))],[x1[0,0] + 3*sqrt(x2) for x1,x2 in zip(outputW['WC'],outputW['sig'])],color = 'b', label = 'Encadrement à 3$\sigma$')
+plt.plot([dt * j / orbite.getPeriod() for j in range(len(outputW['W']))],[x1[0,0] - 3*sqrt(x2) for x1,x2 in zip(outputW['WC'],outputW['sig'])],color = 'b')
+plt.xlabel("t (orbites)")
+plt.ylabel("Élément de la vitesse de rotation")
+plt.title("Evolution d'un élément de la vitesse de rotation recalée")
+plt.legend(loc = 'best')
 plt.show()

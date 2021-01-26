@@ -3,10 +3,11 @@ from scao.quaternion import Quaternion, averageQuaternions
 
 
 class State:
-
-    def __init__(self,q0,W0,gyroBias):
+    
+    def __init__(self,q0,W0,I,gyroBias):
         self.Q = q0  #Quaternion
         self.W = W0  #Rotation speed
+        self.I = I  #Inertia Matrix
         self.gyroBias = gyroBias
 
     def addition(self,reducedState):  #reducedState is a 9-dim column vector (3x3-dim column vectors)
@@ -19,7 +20,7 @@ class State:
         QuatDelta = Quaternion(C,direction[0]*S,direction[1]*S,direction[2]*S)
 
 
-        return State(self.Q * QuatDelta, self.W + reducedState[3:6], self.gyroBias + reducedState[6:9])
+        return State(self.Q * QuatDelta, self.W + reducedState[3:6], self.I, self.gyroBias + reducedState[6:9])
 
     def dQ(self):
         """
@@ -32,7 +33,10 @@ class State:
                          [qy, -qx, qw]])
         return 1 / 2 * np.dot(expQ, self.W)
 
-    def evolv(self,dt):
+    def evolv(self,u,dt):
+
+        L = self.Q.V2R(np.dot(self.I, self.Q.R2V(self.W))) + u * dt  # calcul du nouveau moment cinétique
+        self.W = self.Q.V2R(np.dot(np.linalg.inv(self.I), self.Q.R2V(L)))  # Vecteur rotation du satellite dans Rr
 
         Qnump = self.Q.vec() + self.dQ() * dt  # calcul de la nouvelle orientation
         self.Q = Quaternion(*Qnump[:, 0])
@@ -55,7 +59,7 @@ class State:
         rotMean /= length
         biasMean /= length
 
-        return State(quatMean, rotMean, biasMean)
+        return State(quatMean, rotMean, self.I, biasMean)
 
     def averageQuat(self, quatInit, statsList):
         """compute quaternion average with other methode"""
