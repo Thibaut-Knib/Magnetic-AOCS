@@ -88,11 +88,11 @@ stab = SCAO(PIDRW(RW_P, RW_dP, RW_D), PIDMT(MT_P, MT_dP, MT_D), SCAOratio, I, J)
 
 dimState = 9 # 3 pour les quaternions, 3 pour la rotation, 3 pour les biais
 dimObs = 6
-CovRot = 1e-8  #Paramètre à régler pour le bon fonctionnement du filtre
+CovRot = 1e-6  #Paramètre à régler pour le bon fonctionnement du filtre
 
-P0 = np.eye(dimState)*1e-5
+P0 = np.eye(dimState)*1e-2
 Qcov = np.zeros((dimState,dimState))
-Qcov[0:3,0:3] = 1e-8*np.eye(3)
+Qcov[0:3,0:3] = 1e-4*np.eye(3)
 Qcov[3:6,3:6] = CovRot*np.eye(3)
 Qcov[6:9,6:9] = 1e-8*np.eye(3)
 Rcov = np.zeros((dimObs,dimObs)) # ATTENTION, dimension de la mesure ici, pas de l'état
@@ -146,7 +146,7 @@ def plotAttitude():
 output = {'t': [], 'M': [], 'U': []}
 outputW = {'t': [], 'W': [], 'WM': [], 'WC': [], 'sig': []}
 outputB = {'t': [], 'B': [], 'BM': []}
-while t<dt*1000:
+while t<dt*5000:
     # on récupère la valeur actuelle du champ magnétique et on actualise l'affichage du champ B
     orbite.setTime(t)  # orbite.setTime(t)
     environnement.setPosition(orbite.getPosition())
@@ -216,7 +216,10 @@ while t<dt*1000:
 sns.set(context = 'talk', style = 'white')
 plt.rcParams["figure.figsize"] = (8,4)
 
-plt.plot(range(1000),ukf.record['NormKal'])
+#plt.plot(range(1000),ukf.record['NormKal'])
+#plt.show()
+
+plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [(q1*q2.inv()).angle() for q1,q2 in zip(qs,qc)], color = 'black')
 plt.show()
 
 plt.plot([dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] for q in qs], color = 'black', label = 'Vraie valeur')
