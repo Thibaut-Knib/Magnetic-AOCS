@@ -81,7 +81,10 @@ class Quaternion:
         return res/np.linalg.norm(res)
 
     def angle(self):
-        return acos(max(-1,min(self.a,1)))*2
+        alpha = acos(max(-1,min(self.a,1)))*2
+        if (alpha > np.pi):
+            alpha -= (2*np.pi)
+        return alpha
 
     def axialPart(self):
         res = np.array([[self.b],[self.c],[self.d]])
