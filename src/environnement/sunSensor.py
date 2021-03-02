@@ -15,28 +15,28 @@ class SunSensor:
         self.Q = Q
 
     def getNormalizedTension(self,t):
-        U = np.zeros(6)
+        U = np.zeros((6,1)
         sunDir_satRef = Q.V2R(sunDir(t))
 
         #Selon x
         u = np.dot(sunDir_satRef,np.array([[1],[0],[0]]))/np.norm(sunDir_satRef)
         if (u > 0):
-            U[0] = u
+            U[0,0] = u
         else:
-            U[1] = -u
+            U[1,0] = -u
 
         #Selon y
         u = np.dot(sunDir_satRef,np.array([[0],[1],[0]]))/np.norm(sunDir_satRef)
         if (u > 0):
-            U[2] = u
+            U[2,0] = u
         else:
-            U[3] = -u
+            U[3,0] = -u
 
         #Selon z
         u = np.dot(sunDir_satRef,np.array([[0],[0],[1]]))/np.norm(sunDir_satRef)
         if (u > 0):
-            U[4] = u
+            U[4,0] = u
         else:
-            U[5] = -u
+            U[5,0] = -u
 
         return U

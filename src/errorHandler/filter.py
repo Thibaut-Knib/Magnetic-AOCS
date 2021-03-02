@@ -99,7 +99,7 @@ class UKF:
             zi = np.zeros((12, 1))
             zi[0:3] = rot
             zi[3:6] = mag
-            zi[6:12] = sun.T
+            zi[6:12] = sun
             Zi.append(zi)
         return Zi
 
@@ -107,7 +107,7 @@ class UKF:
         Zmesur = np.zeros((12,1))
         Zmesur[0:3] = WM
         Zmesur[3:6] = BM
-        Zmesur[6:12] = uSunM.T
+        Zmesur[6:12] = uSunM
         return Zmesur - zk_
 
     def ObsCov(self, Zi, zk_):
