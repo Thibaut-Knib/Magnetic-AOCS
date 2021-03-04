@@ -15,14 +15,16 @@ class MeasuredWorld:
     WM : Measured rotation speed
     """
 
-    def __init__(self,gyroModel,magneticModel,dt,Q0=Quaternion(1, 0, 0, 0)):
+    def __init__(self,gyroModel,magneticModel,sunSensorModel,dt,Q0=Quaternion(1, 0, 0, 0)):
         self.gyroModel = gyroModel
         self.magneticModel = magneticModel
+        self.sunSensorModel = sunSensorModel
         self.dt = dt
         self.t = 0
         self.QM = Q0
         self.BM = None
         self.WM = None
+        self.uSunM = None
 
     def dQ(self):
         """
@@ -36,9 +38,10 @@ class MeasuredWorld:
         return 1 / 2 * np.dot(expQ, self.WM)
 
 
-    def getNextIteration(self,W,B,Qtrue):
+    def getNextIteration(self,W,B,uSun,Qtrue):
         self.setBM(B, Qtrue)
         self.setWM(W, Qtrue)
+        self.setuSunM()
         Qnump = self.QM.vec() + self.dQ() * self.dt  # calcul de la nouvelle orientation
         self.QM = Quaternion(*Qnump[:, 0])
         self.t += self.dt
@@ -48,6 +51,9 @@ class MeasuredWorld:
 
     def setWM(self,W,Q):
         self.WM = Q.V2R(measuredValue(Q.R2V(W), self.gyroModel, self.t))
+
+    def setuSunM(self):
+        self.uSunM = measuredValue(uSun, self.sunSensorModel, self.t)
 
 def measuredValue(trueValue, model, t):
 

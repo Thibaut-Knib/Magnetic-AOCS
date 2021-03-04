@@ -1,6 +1,7 @@
 import numpy as np
 from errorHandler.state import State
 from copy import copy
+from environnement.sunSensor import SunSensor
 
 class UKF:
 
@@ -88,22 +89,25 @@ class UKF:
         Pk_ /= (2*self.dim)
         return Pk_
 
-    def predictObs(self, Yi, LocalMagField_Rr):
+    def predictObs(self, Yi, LocalMagField_Rr, t):
 
         Zi = []
         ZRot = predictRotation(Yi)
         ZMagnet = predictMagnetField(Yi, LocalMagField_Rr)
-        for rot, mag in zip(ZRot, ZMagnet):
-            zi = np.zeros((6, 1))
+        ZSun = predictSunSensor(Yi, t)
+        for rot, mag, sun in zip(ZRot, ZMagnet, ZSun):
+            zi = np.zeros((12, 1))
             zi[0:3] = rot
             zi[3:6] = mag
+            zi[6:12] = sun
             Zi.append(zi)
         return Zi
 
-    def innovation(self, zk_, WM, BM):
-        Zmesur = np.zeros((6,1))
+    def innovation(self, zk_, WM, BM, uSunM):
+        Zmesur = np.zeros((12,1))
         Zmesur[0:3] = WM
         Zmesur[3:6] = BM
+        Zmesur[6:12] = uSunM
         return Zmesur - zk_
 
     def ObsCov(self, Zi, zk_):
@@ -114,7 +118,7 @@ class UKF:
          :return: P_zz Ucertainty of the predicted measurment
 
          """
-        cov = np.zeros((6,6))
+        cov = np.zeros((12,12))
         for z in Zi:
             cov += np.dot(z-zk_,(z-zk_).T)
         cov /= len(Zi)
@@ -129,7 +133,7 @@ class UKF:
         :param zk_: mean expected measurement
         :return: Pxz Cross correlation matrix between sigma points and measurments
         """
-        crosscov = np.zeros((self.dim, 6))
+        crosscov = np.zeros((self.dim, 12))
         for w, z in zip(WiPrime, Zi):
             crosscov += np.dot(w, (z - zk_).T)
 
@@ -137,7 +141,7 @@ class UKF:
 
         return crosscov
 
-    def errorCorrection(self, WM, BM, LocalMagField_Rr, magMoment=np.array([[0],[0],[0]])):
+    def errorCorrection(self, t, WM, BM, uSunM, LocalMagField_Rr, magMoment=np.array([[0],[0],[0]])):
         '''
         Renvoie au pas de temps de l'appel la correction de la mesure
         '''
@@ -153,9 +157,9 @@ class UKF:
         Pk_ = self.aPrioriProcessCov(WiPrime)
 
         # prediction of measure
-        Zi = self.predictObs(Yi, LocalMagField_Rr)
+        Zi = self.predictObs(Yi, LocalMagField_Rr, t)
         zk_ = obsMean(Zi)
-        nu = self.innovation(zk_, WM, BM)
+        nu = self.innovation(zk_, WM, BM, uSunM)
 
         Pzz = self.ObsCov(Zi, zk_)
         Pnunu = self.Rcov + Pzz
@@ -198,6 +202,15 @@ def predictMagnetField(Yi, LocalMagField_Rr):
         q = yi.Q
         ZMagnet.append(q.R2V(LocalMagField_Rr))
     return ZMagnet
+
+def predictSunSensor(Yi):
+    ZSun = []
+    sunSensor = SunSensor()
+    for yi in Yi:
+        q = yi.Q
+        sunSensor.update(q)
+        ZSun.append(sunSensor.getNormalizedTension(t))
+    return ZSun
 
 def obsMean(Zi):
     mean = sum(Zi)/len(Zi)

@@ -57,5 +57,11 @@ standard_deviation_mag = np.array([[epsilon_mag],[epsilon_mag],[epsilon_mag]])
 scaling_factor_mag = np.array([[1],[1],[1]])
 drift_mag = np.array([[0],[0],[0]])
 
+biais_sun = np.array([[0],[0],[0],[0],[0],[0]])
+standard_deviation_sun = np.array([[epsilon_sun],[epsilon_sun],[epsilon_sun],[epsilon_sun],[epsilon_sun],[espsilon_sun]])
+scaling_factor_sun = np.array([[1],[1],[1],[1],[1],[1]])
+drift_sun = np.array([[0],[0],[0],[0],[0],[0]])
+
 gyroModel = (biais_gyro, standard_deviation_gyro, scaling_factor_gyro, drift_gyro)
 magneticModel = (biais_mag, standard_deviation_mag, scaling_factor_mag, drift_mag)
+sunSensorModel = (biais_sun, standard_deviation_sun, scaling_factor_sun, drift_sun)

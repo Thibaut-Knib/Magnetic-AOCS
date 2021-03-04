@@ -77,7 +77,7 @@ sim = Simulator(dt, L0, Q0)
 Qt = Quaternion(1, 0, 0, 0) # Quaternion objectif
 
 #Monde mesuré
-mWorld = MeasuredWorld(gyroModel,magneticModel,dt, Q0)
+mWorld = MeasuredWorld(gyroModel,magneticModel,sunSensorModel,dt, Q0)
 
 # Algortihmes de stabilisation
 stab = SCAO(PIDRW(RW_P, RW_dP, RW_D), PIDMT(MT_P, MT_dP, MT_D), SCAOratio, I, J)  # stabilisateur
@@ -87,7 +87,7 @@ stab = SCAO(PIDRW(RW_P, RW_dP, RW_D), PIDMT(MT_P, MT_dP, MT_D), SCAOratio, I, J)
 ############################
 
 dimState = 9 # 3 pour les quaternions, 3 pour la rotation, 3 pour les biais
-dimObs = 6
+dimObs = 12
 CovRot = 1e-6  #Paramètre à régler pour le bon fonctionnement du filtre
 
 P0 = np.eye(dimState)*1e-2
@@ -150,16 +150,16 @@ outputB = {'t': [], 'B': [], 'BM': []}
 while t<dt*5000:
     # on récupère la valeur actuelle du champ magnétique et on actualise l'affichage du champ B
     orbite.setTime(t)  # orbite.setTime(t)
-    environnement.setPosition(orbite.getPosition())
-    B = environnement.getEnvironment()  # dans le référentiel géocentrique
+    environnement.setAttitudePosition(sim.Q,orbite.getPosition())
+    B,uSun = environnement.getEnvironment()  # dans le référentiel géocentrique
 
     # on récupère le prochain vecteur rotation (on fait ube étape dans la sim)
     W = sim.getNextIteration(M, dw, J, B, I)
 
     #Update monde mesuré
-    mWorld.getNextIteration(W,B,sim.Q)
+    mWorld.getNextIteration(W,B,uSun,sim.Q)
     # Correction des erreurs avec un filtre
-    ukf.errorCorrection(mWorld.WM, mWorld.BM, B, M)
+    ukf.errorCorrection(t, mWorld.WM, mWorld.BM, mWorld.uSunM, B, M)
     # Sauvegarder les valeurs de simulation actuelles: (valeurs mesurées)
     stab.setAttitude(ukf.curState.Q)
     stab.setRotation(ukf.curState.W)
