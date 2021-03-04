@@ -3,7 +3,7 @@ from scao.quaternion import Quaternion, averageQuaternions
 
 
 class State:
-    
+
     def __init__(self,q0,W0,I,gyroBias):
         self.Q = q0  #Quaternion
         self.W = W0  #Rotation speed
@@ -68,3 +68,9 @@ class State:
         quaternionMatrix = np.array([[quat.a, quat.b, quat.c, quat.d] for quat in LQuat])
         quatMean = Quaternion(*averageQuaternions(quaternionMatrix))
         return quatMean
+
+    def __repr__(self):
+        return "Quaternion : " + str(self.Q) + "\nRotation : " + str(self.W) + "\nBiais gyro : " + str(self.gyroBias)
+
+    def __str__(self):
+        return "Quaternion : " + str(self.Q) + "\nRotation : " + str(self.W) + "\nBiais gyro : " + str(self.gyroBias)

@@ -91,6 +91,7 @@ dimObs = 6
 CovRot = 1e-6  #Paramètre à régler pour le bon fonctionnement du filtre
 
 P0 = np.eye(dimState)*1e-2
+#variance d'évolution
 Qcov = np.zeros((dimState,dimState))
 Qcov[0:3,0:3] = 1e-4*np.eye(3)
 Qcov[3:6,3:6] = CovRot*np.eye(3)
