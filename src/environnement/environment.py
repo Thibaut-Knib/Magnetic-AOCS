@@ -40,6 +40,6 @@ class Environment:
         """
         Get the magnetic field value at the current position of the satellite (expressed in the intertial frame of reference).
         """
-        B = self.model.getMagneticField()
+        B = self.mag_model.getMagneticField()
         U = self.sun_sensor.getNormalizedTension(self.t)
         return B,U

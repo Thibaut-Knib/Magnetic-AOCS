@@ -5,7 +5,7 @@ from environnement.sunSensor import SunSensor
 
 class UKF:
 
-    def __init__(self,q0,W0,I,gyroBias,P0,Qcov,Rcov,dt):
+    def __init__(self,q0,W0,I,gyroBias,P0,Qcov,Rcov,dt,recBool = False):
         """UKF filter
         :param q0: Initial estimation of the attitude quaternion
         :param W0: Initial estimation of the rotational velocity componant
@@ -23,14 +23,16 @@ class UKF:
         self.Qcov = Qcov  #Process noise
         self.Rcov = Rcov #covariance du modèle d'erreur de la mesure
         self.dt = dt  #Time step
-        self.record = {'stateIn':[],
-                        'xk_': [],
-                        'Pk_': [],
-                        'nu': [],
-                        'K': [],
-                        'stateOut': [],
-                        'PCorr': [],
-                        'NormKal': []}
+        self.recBool = recBool
+        if (self.recBool):
+            self.record = {'stateIn':[],
+                            'xk_': [],
+                            'Pk_': [],
+                            'nu': [],
+                            'K': [],
+                            'stateOut': [],
+                            'PCorr': [],
+                            'NormKal': []}
 
     def sigmaPoints(self):
         """ Generate a List of sigma points used to estimate the  mean and standard deviation of the pediction.
@@ -177,14 +179,15 @@ class UKF:
         PCorr = Pk_ - np.dot(kalmanGain_k, np.dot(Pnunu, kalmanGain_k.T))
 
         #record
-        self.record['stateIn'].append(self.curState)
-        self.record['xk_'].append(xk_)
-        self.record['Pk_'].append(Pk_)
-        self.record['nu'].append(nu)
-        self.record['K'].append(kalmanGain_k)
-        self.record['stateOut'].append(xCorr)
-        self.record['PCorr'].append(PCorr)
-        self.record['NormKal'].append(np.linalg.norm(Pk_[0:3][0:3]))
+        if (self.recBool):
+            self.record['stateIn'].append(self.curState)
+            self.record['xk_'].append(xk_)
+            self.record['Pk_'].append(Pk_)
+            self.record['nu'].append(nu)
+            self.record['K'].append(kalmanGain_k)
+            self.record['stateOut'].append(xCorr)
+            self.record['PCorr'].append(PCorr)
+            self.record['NormKal'].append(np.linalg.norm(Pk_[0:3][0:3]))
 
         # Update
         self.curState = xCorr
@@ -203,7 +206,7 @@ def predictMagnetField(Yi, LocalMagField_Rr):
         ZMagnet.append(q.R2V(LocalMagField_Rr))
     return ZMagnet
 
-def predictSunSensor(Yi):
+def predictSunSensor(Yi,t):
     ZSun = []
     sunSensor = SunSensor()
     for yi in Yi:

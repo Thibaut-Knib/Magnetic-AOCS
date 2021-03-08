@@ -45,6 +45,7 @@ B_model = 'dipole'
 
 epsilon_gyro = 0 # 1e-4
 epsilon_mag = 0 # 1e-7
+epsilon_sun = 0
 
 #Error models
 biais_gyro = np.array([[0],[0],[0]])
@@ -58,7 +59,7 @@ scaling_factor_mag = np.array([[1],[1],[1]])
 drift_mag = np.array([[0],[0],[0]])
 
 biais_sun = np.array([[0],[0],[0],[0],[0],[0]])
-standard_deviation_sun = np.array([[epsilon_sun],[epsilon_sun],[epsilon_sun],[epsilon_sun],[epsilon_sun],[espsilon_sun]])
+standard_deviation_sun = np.array([[epsilon_sun],[epsilon_sun],[epsilon_sun],[epsilon_sun],[epsilon_sun],[epsilon_sun]])
 scaling_factor_sun = np.array([[1],[1],[1],[1],[1],[1]])
 drift_sun = np.array([[0],[0],[0],[0],[0],[0]])
 

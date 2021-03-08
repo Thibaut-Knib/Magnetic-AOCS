@@ -41,7 +41,7 @@ class MeasuredWorld:
     def getNextIteration(self,W,B,uSun,Qtrue):
         self.setBM(B, Qtrue)
         self.setWM(W, Qtrue)
-        self.setuSunM()
+        self.setuSunM(uSun)
         Qnump = self.QM.vec() + self.dQ() * self.dt  # calcul de la nouvelle orientation
         self.QM = Quaternion(*Qnump[:, 0])
         self.t += self.dt
@@ -52,12 +52,12 @@ class MeasuredWorld:
     def setWM(self,W,Q):
         self.WM = Q.V2R(measuredValue(Q.R2V(W), self.gyroModel, self.t))
 
-    def setuSunM(self):
+    def setuSunM(self,uSun):
         self.uSunM = measuredValue(uSun, self.sunSensorModel, self.t)
 
 def measuredValue(trueValue, model, t):
 
     biais, standard_deviation, scaling_factor, drift = model
-    measured = (trueValue + biais + np.array([gauss(0,standard_deviation[i,0]) for i in range(3)]).reshape(3,1) + drift*t) * scaling_factor
+    measured = (trueValue + biais + np.array([gauss(0,standard_deviation[i,0]) for i in range(len(biais))]).reshape(len(biais),1) + drift*t) * scaling_factor
 
     return measured
