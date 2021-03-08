@@ -5,7 +5,7 @@ from math import pi
 # Paramètres de la simulation #
 ###############################
 # Temps
-dt = 50 #pas de temps de la simulation
+dt = 1 #pas de temps de la simulation
 fAffichage = 25 #fréquence d'affichage
 Affichage_3D = False
 
