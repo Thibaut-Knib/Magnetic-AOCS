@@ -88,12 +88,12 @@ stab = SCAO(PIDRW(RW_P, RW_dP, RW_D), PIDMT(MT_P, MT_dP, MT_D), SCAOratio, I, J)
 
 dimState = 9 # 3 pour les quaternions, 3 pour la rotation, 3 pour les biais
 dimObs = 12
-CovRot = 1e-7  #Paramètre à régler pour le bon fonctionnement du filtre
+CovRot = 1e-6  #Paramètre à régler pour le bon fonctionnement du filtre
 
-P0 = np.eye(dimState)*1e-2
+P0 = np.eye(dimState)*1e-3
 #variance d'évolution
 Qcov = np.zeros((dimState,dimState))
-Qcov[0:3,0:3] = 1e-4*np.eye(3)
+Qcov[0:3,0:3] = 1e-5*np.eye(3)
 Qcov[3:6,3:6] = CovRot*np.eye(3)
 Qcov[6:9,6:9] = 1e-8*np.eye(3)
 Rcov = np.zeros((dimObs,dimObs)) # ATTENTION, dimension de la mesure ici, pas de l'état
@@ -147,7 +147,7 @@ def plotAttitude():
 output = {'M': [], 'U': []}
 outputW = {'W': [], 'WM': [], 'WC': [], 'sig': []}
 outputB = {'B': [], 'BM': []}
-while t<dt*50000:
+while t<dt*2000:
     # on récupère la valeur actuelle du champ magnétique et on actualise l'affichage du champ B
     orbite.setTime(t)  # orbite.setTime(t)
     environnement.setAttitudePosition(sim.Q,orbite.getPosition())
@@ -165,19 +165,20 @@ while t<dt*50000:
     stab.setRotation(ukf.curState.W)
     stab.setMagneticField(sim.Q.V2R(mWorld.BM)) #non recalé
 
-    # Enregistrement de variables pour affichage
-    Wr.append(np.linalg.norm(W))
-    qs.append(sim.Q)
-    qm.append(mWorld.QM)
-    qc.append(ukf.curState.Q)
-    sigma1.append(sqrt(ukf.P[0,0]))
-
     # Prise de la commande de stabilisation
     dw, M = stab.getCommand(Qt)  # dans Rv
     U, M = hardW.getRealCommand(dw, M)
 
     # affichage de données toute les 10 itérations
     if nbit % 10 == 0:
+
+        # Enregistrement de variables pour affichage
+        Wr.append(np.linalg.norm(W))
+        qs.append(sim.Q)
+        qm.append(mWorld.QM)
+        qc.append(ukf.curState.Q)
+        sigma1.append(sqrt(ukf.P[0,0]))
+
         print("t :",t)
         output['M'].append(M)
         output['U'].append(U)
