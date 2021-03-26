@@ -10,15 +10,17 @@ class State:
         self.I = I  #Inertia Matrix
         self.gyroBias = gyroBias
 
-    def addition(self,reducedState):  #reducedState is a 9-dim column vector (3x3-dim column vectors)
+    def addition(self, reducedState):  # reducedState is a 9-dim column vector (3x3-dim column vectors)
         alpha = np.linalg.norm(reducedState[0:3])
+        if alpha > 1.0:
+            print(alpha, "large angle")
+            aplha = 1.0
         if alpha < 1e-4:  #alpha environ égal à 0
             direction = np.array([0.0,0.0,0.0])  #quaternion nul avec une direction quelconque
         else:
-            direction = reducedState[0:3,0]/alpha
-        C,S = np.cos(alpha/2),np.sin(alpha/2)
-        QuatDelta = Quaternion(C,direction[0]*S,direction[1]*S,direction[2]*S)
-
+            direction = reducedState[0:3, 0] / alpha
+        C, S = np.cos(alpha / 2), np.sin(alpha / 2)
+        QuatDelta = Quaternion(C, direction[0] * S, direction[1] * S, direction[2] * S)
 
         return State(self.Q * QuatDelta, self.W + reducedState[3:6], self.I, self.gyroBias + reducedState[6:9])
 
@@ -33,8 +35,8 @@ class State:
                          [qy, -qx, qw]])
         return 1 / 2 * np.dot(expQ, self.W)
 
-    def evolv(self,u,dt):
-
+    def evolv(self, u, dt):
+        """Evolve the Attitude state due to : the rotational velocity, the """
         L = self.Q.V2R(np.dot(self.I, self.Q.R2V(self.W))) + u * dt  # calcul du nouveau moment cinétique
         self.W = self.Q.V2R(np.dot(np.linalg.inv(self.I), self.Q.R2V(L)))  # Vecteur rotation du satellite dans Rr
 

@@ -2,7 +2,7 @@ import sys
 sys.path.append('..')
 from math import *
 import numpy as np
-import wmm2020 as wmm  # wmm2020 is in ./src/
+import wmm2020 as wmm
 from src.environnement.magneticdipole import idm
 
 class Model:
@@ -41,7 +41,7 @@ class Model:
         # mag_orbital =  1e-9*np.array([[-mag.down.values[0][0]], [mag.north.values[0][0]], [mag.east.values[0][0]]]) #in the orbital frame
 
         # using modified wmm2020 to get rid of th xarray dataset that is way to long
-        mag = wmm.wmm_unique(self.i, self.u, self.r / 1000 - 6371.0088, 2019)
+        mag = wmm.wmm_point(self.i, self.u, self.r / 1000 - 6371.0088, 2019)
         mag_orbital = 1e-9 * np.array([[-mag["down"]], [mag["north"]], [mag["east"]]])  # in the orbital frame
 
         return np.dot(self.A_yx(), mag_orbital) # in the intertial frame

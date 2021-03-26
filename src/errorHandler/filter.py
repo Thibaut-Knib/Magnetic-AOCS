@@ -1,7 +1,9 @@
-import numpy as np
-from errorHandler.state import State
 from copy import copy
+
+import numpy as np
 from environnement.sunSensor import SunSensor
+from errorHandler.state import State
+
 
 class UKF:
 
@@ -50,21 +52,25 @@ class UKF:
         res = [self.curState]  ## add Current estimate as a sigma point
 
         for i in range(self.dim):
-            ajout = np.atleast_2d(sqrtmatrix[:,i]).T  #sqrt(2*self.dim) *
+            ajout = np.atleast_2d(sqrtmatrix[:, i]).T  # sqrt(2*self.dim) *
+
             res.append(self.curState.addition(ajout))
             res.append(self.curState.addition(-ajout))
 
         return res
 
-    def evolvSigmaPoints(self, u, Xi):  #Xi the list of state vectors
+    def evolvSigmaPoints(self, u, Xi):
+        """Predict the evolution of the Xi sigma points using the known Command law u
+        """
+
         Yi = copy(Xi)
         for yi in Yi:
-            yi.evolv(u,self.dt)
+            yi.evolv(u, self.dt)
 
         return Yi
 
-    def stateMean(self, Yi):  #Return the mean of the list Yi (yMean gave the initialisation for the quaternion mean)
-        #Nécessaire pour initialiser la moyenne des quaternions
+    def stateMean(self, Yi):  # Return the mean of the list Yi (yMean gave the initialisation for the quaternion mean)
+        # Nécessaire pour initialiser la moyenne des quaternions
         yMean = copy(self.curState)
         # yMean.evolv(self.dt)
 
@@ -74,8 +80,9 @@ class UKF:
         """Calculation of the transformed sigma points error vectors.
         WiPrime = Yi - xk_ """
         WiPrime = []
+        Q_inv = xk_.Q.inv()
         for yi in Yi:
-            q = yi.Q*xk_.Q.inv()
+            q = yi.Q * Q_inv
             vec = q.axis()*q.angle()
             wi = np.zeros((self.dim,1))  #Reduced state
             wi[0:3] = vec
@@ -151,7 +158,10 @@ class UKF:
         # prediction of state
         Xi = self.sigmaPoints() # Caclul des Wi, calcul des Xi et sauvegarde dans self.sigPoints
         #print([xi.Q for xi in Xi])
-        Yi = self.evolvSigmaPoints(self.curState.Q.V2R(np.cross(magMoment, self.curState.Q.R2V(BM), axisa=0, axisb=0, axisc=0)),Xi) # couple dans Rv du au MC, Xi)  # process model, le bruit étant intégré dans les sigmaPoints
+        Yi = self.evolvSigmaPoints(self.curState.Q.V2R(np.cross(magMoment, self.curState.Q.R2V(BM),
+                                                                axisa=0, axisb=0, axisc=0)),
+                                   Xi)  # couple dans Rv du au MC, Xi)
+        # process model, le bruit étant intégré dans les sigmaPoints
         #print([yi.Q for yi in Yi])
         xk_ = self.stateMean(Yi)
         #print(xk_.Q.axis()*xk_.Q.angle())
@@ -165,7 +175,7 @@ class UKF:
 
         Pzz = self.ObsCov(Zi, zk_)
         Pnunu = self.Rcov + Pzz
-        #print(Pnunu)
+
         Pxz = self.crossCorrelationMatrix(WiPrime, Zi, zk_)
 
         kalmanGain_k = cumputeKalmanGain(Pxz, Pnunu)

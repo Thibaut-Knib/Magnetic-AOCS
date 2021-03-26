@@ -8,7 +8,8 @@ class Quaternion:
 
     Allows a simple use of quaternion
     """
-    def __init__(self,a,b,c,d):
+
+    def __init__(self, a, b, c, d):
         """
 
         :param a: q_0
@@ -22,6 +23,7 @@ class Quaternion:
 
         Normalize the quaternion at initialization.
         """
+
         norm = sqrt(a**2+b**2+c**2+d**2)
         self.a = a/norm  #: first element of the Quaternion q_0
         self.b = b/norm  #: second element of the Quaternion q_1
@@ -34,10 +36,10 @@ class Quaternion:
         """ Calcule le conjugué du quaternion.
             Ceux-ci étant unitaires, inverse = conjugué.
         """
-        return Quaternion(self.a,-self.b,-self.c,-self.d)
+        return Quaternion(self.a, -self.b, -self.c, -self.d)
 
     def vec(self):
-        return np.array([[self.a],[self.b],[self.c],[self.d]])
+        return np.array([[self.a], [self.b], [self.c], [self.d]])
 
     def __mul__(self,value):
         return Quaternion(
@@ -47,9 +49,10 @@ class Quaternion:
             self.d*value.a - self.c*value.b + self.b*value.c + self.a*value.d,
         )
 
-    def tm(self): #transfer matrix from Rr to Rv i.e. X_Rr = M * X_Rv
+    def tm(self):  # transfer matrix from Rr to Rv i.e. X_Rr = M * X_Rv
+
         if self.tmsave is None:
-            q0,q1,q2,q3 = self.a,self.b,self.c,self.d
+            q0, q1, q2, q3 = self.a, self.b, self.c, self.d
             self.tmsave = np.array(
                 [[2*(q0**2+q1**2)-1, 2*(q1*q2-q0*q3)  , 2*(q1*q3+q0*q2)  ],
                  [2*(q1*q2+q0*q3)  , 2*(q0**2+q2**2)-1, 2*(q2*q3-q0*q1)  ],
@@ -58,8 +61,10 @@ class Quaternion:
         return self.tmsave
 
     def tminv(self): #transfer matrix from Rv to Rr i.e. X_Rv = M * X_Rr
+
         if self.tminvsave is None:
             self.tminvsave = np.linalg.inv(self.tm())
+
         return self.tminvsave
 
     def __getitem__(self,index):
@@ -75,26 +80,28 @@ class Quaternion:
             raise IndexError("Accessing a non-existing value of a 4 elements vector")
 
     def axis(self):
-        res = np.array([[self.b],[self.c],[self.d]])
+        res = self.axialPart()
         if np.linalg.norm(res) == 0:
-            return np.array([[1],[0],[0]])
+            return np.array([[1], [0], [0]])
         return res/np.linalg.norm(res)
 
     def angle(self):
-        alpha = acos(max(-1,min(self.a,1)))*2
-        if (alpha > np.pi):
+        alpha = acos(max(-1, min(self.a, 1))) * 2
+
+        if alpha > np.pi:
             alpha -= (2*np.pi)
         return alpha
 
     def axialPart(self):
-        res = np.array([[self.b],[self.c],[self.d]])
+        res = np.array([[self.b], [self.c], [self.d]])
         return res
 
-    def V2R(self,vec):
-        return np.dot(self.tm(),vec)
+    def V2R(self, vec):
+        return np.dot(self.tm(), vec)
 
-    def R2V(self,vec):
-        return np.dot(self.tminv(),vec)
+    def R2V(self, vec):
+
+        return np.dot(self.tminv(), vec)
 
     def __repr__(self):
         return "(" + str(self.a) + ", " + str(self.b) + ", " + str(self.c) + ", " + str(self.d) + ")"
@@ -121,6 +128,7 @@ class Quaternion:
             #Au lieu de considérer alpha/2, on prend alpha pour rendre la convergence plus rapide (en supposant que l'initialisation est pas trop loin du résultat)
             eQuat = Quaternion(np.cos(alpha),e[0,0]*np.sin(alpha),e[1,0]*np.sin(alpha),e[2,0]*np.sin(alpha))
             qt = eQuat*qt
+
             testTol = (alpha/2 < tol)
 
             compteur += 1

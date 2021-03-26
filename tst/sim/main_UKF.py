@@ -84,16 +84,16 @@ stab = SCAO(PIDRW(RW_P, RW_dP, RW_D), PIDMT(MT_P, MT_dP, MT_D), SCAOratio, I, J)
 # Initialisation du filtre #
 ############################
 
-dimState = 9 # 3 pour les quaternions, 3 pour la rotation, 3 pour les biais
+dimState = 9  # 3 pour les quaternions, 3 pour la rotation, 3 pour les biais
 dimObs = 12
-CovRot = 1e-6  #Paramètre à régler pour le bon fonctionnement du filtre
+CovRot = 1e-7  # Paramètre à régler pour le bon fonctionnement du filtre
 
 P0 = np.eye(dimState)*1e-3
 #variance d'évolution
 Qcov = np.zeros((dimState,dimState))
-Qcov[0:3,0:3] = 1e-5*np.eye(3)
-Qcov[3:6,3:6] = CovRot*np.eye(3)
-Qcov[6:9,6:9] = 1e-8*np.eye(3)
+Qcov[0:3, 0:3] = 1e-9 * np.eye(3)
+Qcov[3:6, 3:6] = CovRot * np.eye(3)
+Qcov[6:9, 6:9] = 1e-8 * np.eye(3)
 Rcov = np.zeros((dimObs,dimObs)) # ATTENTION, dimension de la mesure ici, pas de l'état
 for kk in range(3):
     Rcov[kk,kk] = gyroModel[1][kk,0]**2
@@ -107,7 +107,7 @@ ukf = flt.UKF(Q0,W0,I,gyroModel[0],P0,Qcov,Rcov,dt)
 ############################
 # Initialisation graphique #
 ############################
-Affichage_3D = True
+Affichage_3D = False
 if (Affichage_3D):
     ux = vp.vector(1, 0, 0)
     uy = vp.vector(0, 1, 0)
@@ -149,24 +149,26 @@ def plotAttitude():
 output = {'M': [], 'U': []}
 outputW = {'W': [], 'WM': [], 'WC': [], 'sig': []}
 outputB = {'B': [], 'BM': []}
-while t<dt*2000:
+
+while t < dt * 2000:
+
     # on récupère la valeur actuelle du champ magnétique et on actualise l'affichage du champ B
     orbite.setTime(t)  # orbite.setTime(t)
-    environnement.setAttitudePosition(sim.Q,orbite.getPosition())
+    environnement.setAttitudePosition(sim.Q, orbite.getPosition())
     B, uSun = environnement.getEnvironment()  # dans le référentiel géocentrique
 
     # on récupère le prochain vecteur rotation (on fait ube étape dans la sim)
     W = sim.getNextIteration(M, dw, J, B, I)
 
-    #Update monde mesuré
-    mWorld.getNextIteration(W,B,uSun,sim.Q)
+    # Update monde mesuré
+    mWorld.getNextIteration(W, B, uSun, sim.Q)
     # Correction des erreurs avec un filtre
 
     ukf.errorCorrection(t, mWorld.WM, mWorld.BM, mWorld.uSunM, B, M)
     # Sauvegarder les valeurs de simulation actuelles: (valeurs mesurées)
     stab.setAttitude(ukf.curState.Q)
     stab.setRotation(ukf.curState.W)
-    stab.setMagneticField(sim.Q.V2R(mWorld.BM)) #non recalé
+    stab.setMagneticField(sim.Q.V2R(mWorld.BM))  # non recalé
 
     # Prise de la commande de stabilisation
     dw, M = stab.getCommand(Qt)  # dans Rv
@@ -175,6 +177,7 @@ while t<dt*2000:
     M *= 0
 
     # affichage de données toute les 10 itérations
+
     if nbit % 10 == 0:
 
         # Enregistrement de variables pour affichage
@@ -182,9 +185,9 @@ while t<dt*2000:
         qs.append(sim.Q)
         qm.append(mWorld.QM)
         qc.append(ukf.curState.Q)
-        sigma1.append(sqrt(ukf.P[0,0]))
+        sigma1.append(np.sqrt(ukf.P[0, 0]))
 
-        print("t :",t)
+        print("t :", t)
         output['M'].append(M)
         output['U'].append(U)
 
@@ -196,52 +199,65 @@ while t<dt*2000:
         outputB['B'].append(np.linalg.norm(B))
         outputB['BM'].append(np.linalg.norm(mWorld.BM))
 
-
     # Actualisation de l'affichage graphique
-    if (Affichage_3D):
+    if Affichage_3D:
         b_vector.axis = 1e5 * vp.vector(B[0][0], B[1][0], B[2][0])
         satellite.rotate(angle=np.linalg.norm(W) * dt, axis=vp.vector(W[0][0], W[1][0], W[2][0]),
                          origin=vp.vector(10, 10, 10))
 
     # Rate : réalise 25 fois la boucle par seconde
-    #vp.rate(fAffichage)  # vp.rate(1/dt)
+    # vp.rate(fAffichage)  # vp.rate(1/dt)
     nbit += 1
     t += dt
 
-#plotAttitude()
+if True:
+    # plotAttitude()
 
-#print([ukf.record['K'][i][3:6,0:6] for i in range(50,55)])
-#print([ukf.record['stateOut'][i].gyroBias for i in range(310,325)])
+    # print([ukf.record['K'][i][3:6,0:6] for i in range(50,55)])
+    # print([ukf.record['stateOut'][i].gyroBias for i in range(310,325)])
 
-#print(ukf.record['K'][3000])
+    # print(ukf.record['K'][3000])
 
-sns.set(context = 'talk', style = 'white')
-plt.rcParams["figure.figsize"] = (8,4)
+    sns.set(context='talk', style='white')
+    plt.rcParams["figure.figsize"] = (8, 4)
 
-#plt.plot(range(1000),ukf.record['NormKal'])
-#plt.show()
+    # plt.plot(range(1000),ukf.record['NormKal'])
+    # plt.show()
 
-plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(qs))], [abs((q1*q2.inv()).angle()) for q1,q2 in zip(qs,qc)], color = 'black')
-plt.show()
+    plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(qs))],
+             [abs((q1 * q2.inv()).angle()) for q1, q2 in zip(qs, qc)], color='black')
+    plt.show()
 
-plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] for q in qs], color = 'black', label = 'Vraie valeur')
-plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] for q in qm], color = 'r', label = 'Valeur bruitée')
-plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] for q in qc], color = 'g', label = 'Valeur recalé')
-plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] + 3*s for  q,s in zip(qc,sigma1)], color = 'b', label = 'Encadrement à 3$\sigma$')
-plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle()*q.axis()[1,0] - 3*s for  q,s in zip(qc,sigma1)], color = 'b')
-plt.xlabel("t (orbites)")
-plt.ylabel("Élément du quaternion")
-plt.title("Evolution d'un élément du quaternion recalé")
-plt.legend(loc = 'best')
-plt.show()
+    plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle() * q.axis()[1, 0] for q in qs],
+             color='black', label='Vraie valeur')
+    plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle() * q.axis()[1, 0] for q in qm],
+             color='r', label='Valeur bruitée')
+    plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(qs))], [q.angle() * q.axis()[1, 0] for q in qc],
+             color='g', label='Valeur recalé')
+    plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(qs))],
+             [q.angle() * q.axis()[1, 0] + 3 * s for q, s in zip(qc, sigma1)], color='b',
+             label='Encadrement à 3$\sigma$')
+    plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(qs))],
+             [q.angle() * q.axis()[1, 0] - 3 * s for q, s in zip(qc, sigma1)], color='b')
+    plt.xlabel("t (orbites)")
+    plt.ylabel("Élément du quaternion")
+    plt.title("Evolution d'un élément du quaternion recalé")
+    plt.legend(loc='best')
+    plt.show()
 
-plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(outputW['W']))],[x[0,0] for x in outputW['W']],color = 'black', label = 'Vraie valeur')
-plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(outputW['W']))],[x[0,0]for x in outputW['WM']],color = 'r', label = 'Valeur bruitée')
-plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(outputW['W']))],[x[0,0] for x in outputW['WC']],color = 'g', label = 'Valeur recalé')
-plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(outputW['W']))],[x1[0,0] + 3*sqrt(x2) for x1,x2 in zip(outputW['WC'],outputW['sig'])],color = 'b', label = 'Encadrement à 3$\sigma$')
-plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(outputW['W']))],[x1[0,0] - 3*sqrt(x2) for x1,x2 in zip(outputW['WC'],outputW['sig'])],color = 'b')
-plt.xlabel("t (orbites)")
-plt.ylabel("Élément de la vitesse de rotation")
-plt.title("Evolution d'un élément de la vitesse de rotation recalée")
-plt.legend(loc = 'best')
-plt.show()
+    plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(outputW['W']))], [x[0, 0] for x in outputW['W']],
+             color='black', label='Vraie valeur')
+    plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(outputW['W']))], [x[0, 0] for x in outputW['WM']],
+             color='r', label='Valeur bruitée')
+    plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(outputW['W']))], [x[0, 0] for x in outputW['WC']],
+             color='g', label='Valeur recalé')
+    plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(outputW['W']))],
+             [x1[0, 0] + 3 * np.sqrt(x2) for x1, x2 in zip(outputW['WC'], outputW['sig'])], color='b',
+             label='Encadrement à 3$\sigma$')
+    plt.plot([10 * dt * j / orbite.getPeriod() for j in range(len(outputW['W']))],
+             [x1[0, 0] - 3 * np.sqrt(x2) for x1, x2 in zip(outputW['WC'], outputW['sig'])], color='b')
+    plt.xlabel("t (orbites)")
+    plt.ylabel("Élément de la vitesse de rotation")
+    plt.title("Evolution d'un élément de la vitesse de rotation recalée")
+    plt.legend(loc='best')
+    plt.show()
