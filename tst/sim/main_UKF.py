@@ -1,6 +1,7 @@
 # coding=utf-8
-import sys
 import os
+import sys
+
 #os.chdir(r"C:\Users\thiba\Documents\Polytechnique\P3A\Magnetic-AOCS\tst\sim")
 sys.path.append(os.path.join(*['..'] * 2))
 print(os.getcwd())
@@ -9,8 +10,6 @@ sys.path.append("src/")
 
 import shutil
 import vpython as vp
-from math import *
-import numpy as np
 from simulator import Simulator
 from scao.scao import SCAO
 from scao.stabAlgs import PIDRW, PIDMT
@@ -21,7 +20,6 @@ import matplotlib.pyplot as plt
 from scao.quaternion import Quaternion
 from errorHandler.errorModel import MeasuredWorld
 from errorHandler import filter as flt
-from errorHandler.state import State
 import seaborn as sns
 
 ###############################
@@ -74,7 +72,7 @@ Qt = Quaternion(1, 0, 0, 0) # Quaternion objectif
 # Initialisation du champ magnétique:
 orbite.setTime(t)
 environnement.setAttitudePosition(Q0, orbite.getPosition())
-B = environnement.getEnvironment()  # dans le référentiel du satellite
+B, uSun = environnement.getEnvironment()  # dans le référentiel du satellite
 
 #Monde mesuré
 mWorld = MeasuredWorld(gyroModel,magneticModel,sunSensorModel,dt, Q0)
@@ -109,6 +107,7 @@ ukf = flt.UKF(Q0,W0,I,gyroModel[0],P0,Qcov,Rcov,dt)
 ############################
 # Initialisation graphique #
 ############################
+Affichage_3D = True
 if (Affichage_3D):
     ux = vp.vector(1, 0, 0)
     uy = vp.vector(0, 1, 0)
@@ -121,10 +120,13 @@ if (Affichage_3D):
     axe_x_s = vp.arrow(pos=vp.vector(10, 10, 10), axis=10 * ux, shaftwidth=0.1, color=vp.vector(1, 0, 0))
     axe_y_s = vp.arrow(pos=vp.vector(10, 10, 10), axis=10 * uy, shaftwidth=0.1, color=vp.vector(0, 1, 0))
     axe_z_s = vp.arrow(pos=vp.vector(10, 10, 10), axis=10 * uz, shaftwidth=0.1, color=vp.vector(0, 0, 1))
-    sugarbox = vp.box(pos=vp.vector(10, 10, 10), size=vp.vector(lx, ly, lz), axis=vp.vector(0, 0, 0), up=uy)
+
+    sugarbox = vp.box(pos=vp.vector(10, 10, 10), size=vp.vector(lx * 2, ly, lz), axis=vp.vector(0, 0, 0), up=uy)
     satellite = vp.compound([axe_x_s, axe_y_s, axe_z_s, sugarbox])
     # vecteur champ B
-    b_vector = vp.arrow(pos=vp.vector(-5, -5, -5), axis=1e5 * vp.vector(B[0][0], B[1][0], B[2][0]), shaftwidth=0.1,
+    print(B)
+    b_vector = vp.arrow(pos=vp.vector(-5, -5, -5), axis=1e5 * vp.vector(B[0][0], B[1][0], B[2][0]),
+                        shaftwidth=0.5,
                         color=vp.vector(1, 1, 1))
 
 
@@ -151,7 +153,7 @@ while t<dt*2000:
     # on récupère la valeur actuelle du champ magnétique et on actualise l'affichage du champ B
     orbite.setTime(t)  # orbite.setTime(t)
     environnement.setAttitudePosition(sim.Q,orbite.getPosition())
-    B,uSun = environnement.getEnvironment()  # dans le référentiel géocentrique
+    B, uSun = environnement.getEnvironment()  # dans le référentiel géocentrique
 
     # on récupère le prochain vecteur rotation (on fait ube étape dans la sim)
     W = sim.getNextIteration(M, dw, J, B, I)
@@ -159,6 +161,7 @@ while t<dt*2000:
     #Update monde mesuré
     mWorld.getNextIteration(W,B,uSun,sim.Q)
     # Correction des erreurs avec un filtre
+
     ukf.errorCorrection(t, mWorld.WM, mWorld.BM, mWorld.uSunM, B, M)
     # Sauvegarder les valeurs de simulation actuelles: (valeurs mesurées)
     stab.setAttitude(ukf.curState.Q)
@@ -168,6 +171,8 @@ while t<dt*2000:
     # Prise de la commande de stabilisation
     dw, M = stab.getCommand(Qt)  # dans Rv
     U, M = hardW.getRealCommand(dw, M)
+    U *= 0
+    M *= 0
 
     # affichage de données toute les 10 itérations
     if nbit % 10 == 0:
